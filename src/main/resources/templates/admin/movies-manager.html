@@ -392,6 +392,7 @@
         function saveMovie() {
             $(document).on('click', ".btn-add-movie", function (e) {
                 e.preventDefault();
+
                 var form = new FormData();
                 form.append('name', $('#movie-name-add').val());
                 var duration = $('#movie-duration-add').val();
@@ -404,13 +405,15 @@
                 if (!isNaN(releaseDate.getTime())) {
                     formattedDate = releaseDate.toISOString().split('T')[0];
                 }
-                form.append('release-date', formattedDate);
+                form.append('releaseDate', formattedDate);
                 var categoryIds = [];
                 $('#movie-category-add').find('option:selected').each(function () {
                     categoryIds.push($(this).val());
                 });
-                console.log(categoryIds);
-                form.append('category_id', JSON.stringify(categoryIds));
+
+                categoryIds.forEach(id => {
+                    form.append('categoryIds[]', id);
+                });
                 form.append('author', $('#movie-author-add').val());
                 form.append('actor', $('#movie-actor-add').val());
                 form.append('language', $('#movie-language-add').val().toString());
@@ -425,13 +428,19 @@
             })
         }
         function callApiSaveMovie(formData) {
+
+            console.log(formData);
             $('.background').show();
             var settings = {
                 url: "http://127.0.0.1:8000/api/movie",
-                type: "POST",
+                method: "POST",
                 data: formData,
-                contentType: 'application/json',
+                contentType: false,
                 processData: false,
+                processData: false,
+                headers: {
+                    'Accept': 'application/json',
+                },
                 success: function (data) {
                     $('.background').hide();
                     toastr.success(data.message);
@@ -442,7 +451,7 @@
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    toastr.error(response.message);
+                    toastr.error(Object.values(response.errors)[0]);     
                 }
             }
             $.ajax(settings);
@@ -541,7 +550,6 @@
                 }
                 pagingMovie.append(`<a href="#" class="paging-item paging-item-movie" data-value="${totalPages}">${totalPages}</a>`);
             }
-
         }
         function renderMovie(movie) {
             let btnEnableDisplay = movie.is_enabled ? 'inline' : 'none';
@@ -594,15 +602,23 @@
             $('#movie-actor-update').val(movie.actor);
             $('#movie-summary-update').val(movie.summary);
             $('#movie-trailer-update').val(movie.trailer);
-            $('#image-small-url-update').val(movie.poster_url);
-            $('#image-large-url-update').val(movie.banner_url);
+            const poster = 'http://127.0.0.1:8000/storage/' + movie.poster_url;
+            const banner = 'http://127.0.0.1:8000/storage/' + movie.banner_url;
+            $('#image-small-url-update').val(poster);
+            $('#image-large-url-update').val(banner);
+
+            const categories = movie.categories;
+
+            const result = {
+                category_id: categories.map(category => category.category_id)
+            };
 
             var $movieCategoryUpdate = $('#movie-category-update');
-            $movieCategoryUpdate.val(movie.category_id);
+            $movieCategoryUpdate.val(result.category_id);
             var categoryValues = $movieCategoryUpdate.val();
 
-            $('#img-small').attr('src', movie.poster_url);
-            $('#img-large').attr('src', movie.banner_url);
+            $('#img-small').attr('src', poster);
+            $('#img-large').attr('src', banner);
 
             var languages = movie.language ? movie.language.split(',').map(lang => lang.trim()) : [];
             $('#movie-language-update').val(languages).trigger('change');
@@ -613,7 +629,8 @@
             $(document).on('click', ".btn-update-movie", function (e) {
                 e.preventDefault();
                 var form = new FormData();
-                form.append('id', parseInt($('#movie-id-update').val(), 10));
+                let id = parseInt($('#movie-id-update').val(), 10);
+                form.append('_method', 'PUT');
                 form.append('name', $('#movie-name-update').val());
                 var duration = $('#movie-duration-update').val();
                 if (duration !== "") {
@@ -625,16 +642,18 @@
                 if (!isNaN(releaseDate.getTime())) {
                     formattedDate = releaseDate.toISOString().split('T')[0];
                 }
-                form.append('releasedDate', formattedDate);
+                form.append('releaseDate', formattedDate);
                 var categoryIds = [];
                 $('#movie-category-update').find('option:selected').each(function () {
                     categoryIds.push($(this).val());
                 });
-                form.append('categoryId', JSON.stringify(categoryIds));
+                categoryIds.forEach(id => {
+                    form.append('categoryIds[]', id);
+                });
                 form.append('author', $('#movie-author-update').val());
                 form.append('actor', $('#movie-actor-update').val());
                 form.append('language', $('#movie-language-update').val().toString());
-                form.append('trailerUrl', $('#movie-trailer-update').val());
+                form.append('trailer', $('#movie-trailer-update').val());
                 form.append('summary', $('#movie-summary-update').val());
 
                 var imageSmallHidden = $('#image-small-url-update').val();
@@ -642,41 +661,44 @@
 
                 var fileInputSmall = $('#image-small-update')[0].files[0];
                 if (fileInputSmall) {
-                    form.append('imageSmall', fileInputSmall);
+                    form.append('poster', fileInputSmall);
                 } else {
-                    form.append('imageSmallUrl', imageSmallHidden);
+                    form.append('poster', imageSmallHidden);
                 }
 
                 var fileInputLarge = $('#image-large-update')[0].files[0];
                 if (fileInputLarge) {
-                    form.append('imageLarge', fileInputLarge);
+                    form.append('banner', fileInputLarge);
                 } else {
-                    form.append('imageLargeUrl', imageLargeHidden);
+                    form.append('banner', imageLargeHidden);
                 }
-
-                callApiUpdateMovie(form);
+            
+                callApiUpdateMovie(form, id);
             })
         }
 
-        function callApiUpdateMovie(formData) {
+        function callApiUpdateMovie(formData, id) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/movie",
-                type: "PUT",
+                url: "http://127.0.0.1:8000/api/movie/" + id,
+                type: "POST",
                 data: formData,
                 contentType: false,
                 processData: false,
+                headers: {
+                    'Accept': 'application/json',
+                },
                 success: function (data) {
                     $('.background').hide();
                     toastr.success(data.message);
-                    callApiGetAllMovie(0, localStorage.getItem('sizeElementMovie'), "", "");
+                    callApiGetAllMovie(1, localStorage.getItem('sizeElementMovie'));
                     $('.form-movie-manager').css('opacity', '0').css('top', '150%');
                     $('.manager-container').css('opacity', '0').css('z-index', '-1');
                 },
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    toastr.error(response.message);
+                    toastr.error(Object.values(response.errors)[0]);     
                 }
             }
             $.ajax(settings);
@@ -684,7 +706,7 @@
 
         function callApiUpdateIsEnable(id) {
             var settings = {
-                url: "http://127.0.0.1:8000/api/movie/"+id,
+                url: "http://127.0.0.1:8000/api/movie/" + id,
                 method: "DELETE",
                 contentType: "application/json",
                 success: function (response) {
@@ -699,19 +721,6 @@
             $.ajax(settings);
         }
 
-        // function updateMovieIsEnable(id, isEnable) {
-        //     var $row = $('button[data-id="' + id + '"]').closest('tr');
-        //     var $btnEnable = $row.find('.btn-enable');
-        //     var $btnDisable = $row.find('.btn-disable');
-
-        //     if (isEnable) {
-        //         $btnEnable.show();
-        //         $btnDisable.hide();
-        //     } else {
-        //         $btnEnable.hide();
-        //         $btnDisable.show();
-        //     }
-        // }
 
         $(document).ready(function () {
 
@@ -759,7 +768,7 @@
 
         function callApiGetNameMovie() {
             var settings = {
-                url: "http://localhost:8080/api/pub/movie/getName",
+                url: "http://127.0.0.1:8000/api/list-movie-name",
                 method: "GET",
                 success: function (response) {
                     listMovieName = response.data;
@@ -774,12 +783,12 @@
 
         function callApiSearchMovieByName(name) {
             var settings = {
-                url: "http://localhost:8080/api/pub/movie/search?name=" + name,
+                url: "http://127.0.0.1:8000/api/movie-search/" + name,
                 method: "GET",
                 success: function (response) {
-                    var idMovie = response.data.id;
+                    var idMovie = response.data.movie_id;
                     var numberPage = Math.ceil(idMovie / localStorage.getItem('sizeElementMovie'));
-                    callApiGetAllMovie(numberPage - 1, localStorage.getItem('sizeElementMovie'), "", "");
+                    callApiGetAllMovie(numberPage, localStorage.getItem('sizeElementMovie'));
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);

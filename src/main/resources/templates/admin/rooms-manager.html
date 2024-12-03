@@ -363,27 +363,26 @@
         $(document).ready(function () {
 
             var sizeElementRoom = localStorage.getItem('sizeElementRoom') || 6;
-            var numberPageRoom = 0;
-            var columnSort = "";
-            var sortType = "";
+            var numberPageRoom = 1;
+
 
             $('.number-element-of-page-room').val(sizeElementRoom);
 
             callApiGetCinemaById(cinemaId);
             saveRoom();
             updateRoom();
-            callApiGetAllRoom(cinemaId, numberPageRoom, sizeElementRoom, "", "");
+            callApiGetAllRoom(cinemaId, numberPageRoom, sizeElementRoom);
 
             $(document).on('change', '.number-element-of-page-room', function () {
                 sizeElementRoom = $(this).val();
                 localStorage.setItem('sizeElementRoom', sizeElementRoom);
-                callApiGetAllRoom(cinemaId, numberPageRoom, sizeElementRoom, columnSort, sortType);
+                callApiGetAllRoom(cinemaId, numberPageRoom, sizeElementRoom);
             })
 
             $(document).on('click', '.paging-item-room', function (e) {
                 e.preventDefault();
                 numberPageRoom = $(this).data("value");
-                callApiGetAllRoom(cinemaId, numberPageRoom, sizeElementRoom, columnSort, sortType);
+                callApiGetAllRoom(cinemaId, numberPageRoom, sizeElementRoom);
             })
 
             $(document).on('click', '.btn-detail-room-manager', function (e) {
@@ -393,25 +392,18 @@
             })
 
             $(document).on('click', '.btn-update-isEnable', function () {
-                const $isEnable = $(this).data("value");
-                const $idCinema = $(this).data("id");
-                callApiUpdateIsEnable($idCinema, !$isEnable);
-            });
-
-            $(document).on('click', '.room-sort', function () {
-                columnSort = $(this).data("value");
-                sortType = $(this).data("id");
-                callApiGetAllRoom(cinemaId, numberPageRoom, sizeElementRoom, columnSort, sortType);
+                const $idRoom = $(this).data("id");
+                callApiUpdateIsEnable($idRoom, cinemaId);
             });
 
             $(document).on('click', '.next', function (e) {
                 e.preventDefault();
-                callApiGetAllRoom(total - 1, sizeElementRoom, columnSort, sortType);
+                callApiGetAllRoom(total, sizeElementRoom);
             })
 
             $(document).on('click', '.previous', function (e) {
                 e.preventDefault();
-                callApiGetAllRoom(0, sizeElementRoom, columnSort, sortType);
+                callApiGetAllRoom(1, sizeElementRoom);
             })
 
             $(document).on('click', '#btn-search-room', function (e) {
@@ -476,15 +468,16 @@
                 var form = new FormData();
                 form.append('name', $('#room-name-add').val());
                 form.append('location', $('#room-location-add').val());
-                form.append('roomType', $('#type-room-add').val());
-                form.append('cinemaId', parseInt(cinemaId, 10));
+                form.append('type', $('#type-room-add').val());
+                form.append('cinema_id', parseInt(cinemaId, 10));
                 callApiSaveRoom(form);
             })
         }
+
         function callApiSaveRoom(formData) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/room",
+                url: "http://127.0.0.1:8000/api/room",
                 type: "POST",
                 data: formData,
                 contentType: false,
@@ -492,29 +485,29 @@
                 success: function (data) {
                     $('.background').hide();
                     toastr.success(data.message);
-                    callApiGetAllRoom(cinemaId, 0, localStorage.getItem('sizeElementRoom'), "", "");
+                    callApiGetAllRoom(cinemaId, 1, localStorage.getItem('sizeElementRoom'));
                     $('.form-room-manager').css('opacity', '0').css('top', '150%');
                     $('.manager-container-room').css('opacity', '0').css('z-index', '-1');
                 },
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    toastr.error(response.message);
+                    toastr.error(Object.values(response.errors)[0]);
                 }
             }
             $.ajax(settings);
         }
 
-        function callApiGetAllRoom(cinemaId, page, size, column, sortType) {
+        function callApiGetAllRoom(cinemaId, page, size) {
             var settings = {
-                url: "http://localhost:8080/api/pub/room/by-cinema?cinemaId=" + cinemaId + "&size=" + size + "&page=" + page + "&column=" + column + "&sortType=" + sortType,
+                url: "http://127.0.0.1:8000/api/room-byCinema/" + cinemaId + "?size=" + size + "&page=" + page,
                 method: "GET",
                 success: function (response) {
                     $('.paging-number-room').empty();
                     $('.list-room tbody').empty();
-                    total = response.data.totalPages;
+                    total = response.data.last_page;
                     renderPagingNumberRoom(total, page);
-                    for (var room of response.data.content) {
+                    for (var room of response.data.data) {
                         renderRoom(room);
                     }
                 },
@@ -536,39 +529,39 @@
 
             if (totalPages <= maxPagesToShow) {
                 // Nếu số trang nhỏ hơn số trang tối đa để hiển thị, hiển thị tất cả
-                startPage = 0;
-                endPage = totalPages - 1;
+                startPage = 1;
+                endPage = totalPages;
             } else {
                 // Nếu không, chỉ hiển thị một số trang quanh trang hiện tại
                 if (currentPage <= pageRange) {
-                    startPage = 0;
-                    endPage = maxPagesToShow - 1;
+                    startPage = 1;
+                    endPage = maxPagesToShow;
                 } else if (currentPage + pageRange >= totalPages) {
                     startPage = totalPages - maxPagesToShow;
-                    endPage = totalPages - 1;
+                    endPage = totalPages;
                 } else {
                     startPage = currentPage - pageRange;
                     endPage = currentPage + pageRange;
                 }
             }
 
-            if (startPage > 0) {
+            if (startPage > 1) {
                 pagingRoom.append('<a href="#" class="paging-item paging-item-room" data-value="0">1</a>');
-                if (startPage > 1) {
+                if (startPage > 2) {
                     pagingRoom.append('<span class="hidden-paging">...</span>');
                 }
             }
 
             for (let i = startPage; i <= endPage; i++) {
                 const isActive = i === currentPage ? 'active' : '';
-                pagingRoom.append(`<a href="#" class="paging-item paging-item-room ${isActive}" data-value="${i}">${i + 1}</a>`);
+                pagingRoom.append(`<a href="#" class="paging-item paging-item-room ${isActive}" data-value="${i}">${i}</a>`);
             }
 
-            if (endPage < totalPages - 1) {
-                if (endPage < totalPages - 2) {
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
                     pagingRoom.append('<span class="hidden-paging">...</span>');
                 }
-                pagingRoom.append(`<a href="#" class="paging-item paging-item-room" data-value="${totalPages - 1}">${totalPages}</a>`);
+                pagingRoom.append(`<a href="#" class="paging-item paging-item-room" data-value="${totalPages}">${totalPages}</a>`);
             }
 
         }
@@ -578,34 +571,34 @@
                 THREE_D: '3D',
                 IMAX: 'IMAX'
             };
-            let btnEnableDisplay = room.isEnabled ? 'inline' : 'none';
-            let btnDisableDisplay = room.isEnabled ? 'none' : 'inline';
-            let roomTypeName = roomTypeNames[room.roomType] || 'Không xác định';
-            let initializationStatus = (room.seatColumnNumbers && room.seatRowNumbers) ? 'Đã khởi tạo' : 'Chưa khởi tạo';
-            let initializationStatusValue = (room.seatColumnNumbers && room.seatRowNumbers) ? 'true' : 'false';
-            let statusClass = (room.seatColumnNumbers && room.seatRowNumbers) ? 'status-initialized' : 'status-not-initialized';
+            let btnEnableDisplay = room.is_enabled ? 'inline' : 'none';
+            let btnDisableDisplay = room.is_enabled ? 'none' : 'inline';
+            let roomTypeName = roomTypeNames[room.room_type] || 'Không xác định';
+            let initializationStatus = (room.number_seat_column && room.number_seat_row) ? 'Đã khởi tạo' : 'Chưa khởi tạo';
+            let initializationStatusValue = (room.number_seat_column && room.number_seat_row) ? 'true' : 'false';
+            let statusClass = (room.number_seat_column && room.number_seat_row) ? 'status-initialized' : 'status-not-initialized';
             const roomTr = `<tr>
-                                <td>${room.id}</td>
-                                <td>${room.name}</td>
+                                <td>${room.room_id}</td>
+                                <td>${room.room_name}</td>
                                 <td>${room.location}</td>
                                 <td>${roomTypeName}</td>
                                 <td class="${statusClass}">${initializationStatus}</td>
                                 <td>
-                                    <button class = "btn-update-isEnable btn-enable room-enable" data-id = "${room.id}" data-value="${room.isEnabled}" style="display: ${btnEnableDisplay}">
+                                    <button class = "btn-update-isEnable btn-enable room-enable" data-id = "${room.room_id}" data-value="${room.is_enabled}" style="display: ${btnEnableDisplay}">
                                         <i class="fas fa-eye"></i>
                                         Enabled
                                     </button>
-                                    <button class = "btn-update-isEnable btn-disable room-disable" data-id = "${room.id}" data-value="${room.isEnabled}" style="display: ${btnDisableDisplay}">
+                                    <button class = "btn-update-isEnable btn-disable room-disable" data-id = "${room.room_id}" data-value="${room.is_enabled}" style="display: ${btnDisableDisplay}">
                                         <i class="fas fa-eye-slash"></i>
                                         Disabled
                                     </button>
                                 </td>
                                 <td>
-                                    <button class="btn-detail btn-detail-room-manager" data-id="${room.id}">
+                                    <button class="btn-detail btn-detail-room-manager" data-id="${room.room_id}">
                                         <i class="fas fa-pen-square"></i>
                                         Cập nhật
                                     </button>
-                                    <button class="btn-layout" data-initialization="${initializationStatusValue}" data-room-id="${room.id}" data-room="${room.name}">
+                                    <button class="btn-layout" data-initialization="${initializationStatusValue}" data-room-id="${room.room_id}" data-room="${room.room_name}">
                                         <i class="far fa-eye"></i>
                                         Layout
                                     </button>
@@ -615,10 +608,10 @@
 
         function callApiGetRoomById(id) {
             var settings = {
-                url: "http://localhost:8080/api/pub/room?roomId=" + id,
+                url: "http://127.0.0.1:8000/api/room/" + id,
                 method: "GET",
                 success: function (response) {
-                    renderRoomDetail(response);
+                    renderRoomDetail(response.data);
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);
@@ -629,10 +622,10 @@
         }
 
         function renderRoomDetail(room) {
-            $('#room-id-update').val(room.id);
-            $('#room-name-update').val(room.name);
+            $('#room-id-update').val(room.room_id);
+            $('#room-name-update').val(room.room_name);
             $('#room-location-update').val(room.location);
-            $('#type-room-update').val(room.roomType);
+            $('#type-room-update').val(room.room_type);
         }
 
         function updateRoom() {
@@ -640,11 +633,11 @@
                 e.preventDefault();
                 var form = new FormData();
                 const roomId = parseInt($('#room-id-update').val(), 10);
-                form.append('id', roomId);
+                form.append('_method', 'PUT');
                 form.append('name', $('#room-name-update').val());
                 form.append('location', $('#room-location-update').val());
-                form.append('roomType', $('#type-room-update').val());
-                form.append('cinemaId', parseInt(cinemaId, 10));
+                form.append('type', $('#type-room-update').val());
+                form.append('cinema_id', parseInt(cinemaId, 10));
                 callApiUpdateRoom(roomId, form);
             })
         }
@@ -652,36 +645,39 @@
         function callApiUpdateRoom(roomId, formData) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/room/" + roomId,
-                type: "PUT",
+                url: "http://127.0.0.1:8000/api/room/" + roomId,
+                type: "POST",
                 data: formData,
                 contentType: false,
                 processData: false,
+                headers: {
+                    'Accept': 'application/json'
+                },
                 success: function (data) {
                     $('.background').hide();
                     toastr.success(data.message);
-                    callApiGetAllRoom(cinemaId, 0, localStorage.getItem('sizeElementRoom'), "", "");
+                    callApiGetAllRoom(cinemaId, 1, localStorage.getItem('sizeElementRoom'));
                     $('.form-room-manager').css('opacity', '0').css('top', '150%');
                     $('.manager-container-room').css('opacity', '0').css('z-index', '-1');
                 },
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    toastr.error(response.message);
+                    toastr.error(Object.values(response.errors)[0]);
                 }
             }
             $.ajax(settings);
         }
 
         //Hàm gọi api update Enabled của phòng
-        function callApiUpdateIsEnable(id, isEnable) {
+        function callApiUpdateIsEnable(id, cinemaId) {
             var settings = {
-                url: "http://localhost:8080/api/pub/room/updateEnabled?id=" + id + "&isEnable=" + isEnable,
-                method: "POST",
+                url: "http://127.0.0.1:8000/api/room/" + id,
+                method: "DELETE",
                 contentType: "application/json",
                 success: function (response) {
-                    updateRoomIsEnable(id, isEnable);
                     toastr.success(response.message);
+                    callApiGetAllRoom(cinemaId, 1, localStorage.getItem('sizeElementRoom'));
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);
@@ -689,21 +685,6 @@
                 }
             }
             $.ajax(settings);
-        }
-
-        //Hàm update enabled phòng
-        function updateRoomIsEnable(id, isEnable) {
-            var $row = $('button[data-id="' + id + '"]').closest('tr');
-            var $btnEnable = $row.find('.btn-enable');
-            var $btnDisable = $row.find('.btn-disable');
-
-            if (isEnable) {
-                $btnEnable.show();
-                $btnDisable.hide();
-            } else {
-                $btnEnable.hide();
-                $btnDisable.show();
-            }
         }
 
         //Xử lý việc gợi ý tìm kiếm theo tên
@@ -816,13 +797,11 @@
         // Hàm gọi API để tải danh sách ghế theo phòng
         function callApiGetSeats(roomId) {
             $.ajax({
-                url: `http://localhost:8080/api/pub/seats?roomId=${roomId}`,
+                url: "http://127.0.0.1:8000/api/seat-byRoom/" + roomId,
                 method: "GET",
                 success: function (response) {
-                    if (response.status === 'OK') {
-                        const seatsByRow = groupSeatsByRow(response.data);
-                        updateSeatDisplay(seatsByRow);
-                    }
+                    const seatsByRow = groupSeatsByRow(response.data);
+                    updateSeatDisplay(seatsByRow);
                 },
                 error: function () {
                     console.error('Lỗi khi tải dữ liệu ghế.');
@@ -833,10 +812,10 @@
         // Hàm nhóm các ghế theo hàng
         function groupSeatsByRow(seats) {
             return seats.reduce((acc, seat) => {
-                if (!acc[seat.rowName]) {
-                    acc[seat.rowName] = [];
+                if (!acc[seat.row_name]) {
+                    acc[seat.row_name] = [];
                 }
-                acc[seat.rowName].push(seat);
+                acc[seat.row_name].push(seat);
                 return acc;
             }, {});
         }
@@ -853,11 +832,11 @@
                 rowDiv.append(rowTitleDiv);
 
                 seatsByRow[row].forEach(seat => {
-                    const seatDiv = $(`<div data-seat-name="${seat.rowName}${seat.columnName}">`).addClass('seat');
+                    const seatDiv = $(`<div data-seat-name="${seat.row_name}${seat.column_name}">`).addClass('seat');
                     const seatClasses = [];
-                    seatClasses.push(seat.typeSeat.toLowerCase());
+                    seatClasses.push(seat.type_seat.toLowerCase());
                     seatDiv.addClass(seatClasses.join(' '));
-                    seatDiv.attr('title', `${seat.rowName}${seat.columnName}`);
+                    seatDiv.attr('title', `${seat.row_name}${seat.column_name}`);
                     seatDiv.html('<i class="fas fa-couch"></i>');
 
                     rowDiv.append(seatDiv);

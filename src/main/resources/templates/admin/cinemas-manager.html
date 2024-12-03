@@ -345,26 +345,24 @@
             });
 
             var sizeElementCinema = localStorage.getItem('sizeElementCinema') || 6;
-            var numberPageCinema = 0;
-            var columnSort = "";
-            var sortType = "";
+            var numberPageCinema = 1;
 
             $('.number-element-of-page-cinema').val(sizeElementCinema);
 
             saveCinema();
             updateCinema();
-            callApiGetAllCinema(numberPageCinema, sizeElementCinema, "", "");
+            callApiGetAllCinema(numberPageCinema, sizeElementCinema);
 
             $(document).on('change', '.number-element-of-page-cinema', function () {
                 sizeElementCinema = $(this).val();
                 localStorage.setItem('sizeElementCinema', sizeElementCinema);
-                callApiGetAllCinema(numberPageCinema, sizeElementCinema, columnSort, sortType);
+                callApiGetAllCinema(numberPageCinema, sizeElementCinema);
             })
 
             $(document).on('click', '.paging-item-cinema', function (e) {
                 e.preventDefault();
                 numberPageCinema = $(this).data("value");
-                callApiGetAllCinema(numberPageCinema, sizeElementCinema, columnSort, sortType);
+                callApiGetAllCinema(numberPageCinema, sizeElementCinema);
             })
 
             $(document).on('click', '.btn-detail-cinema-manager', function (e) {
@@ -375,25 +373,24 @@
             })
 
             $(document).on('click', '.btn-update-isEnable', function () {
-                var $isEnable = $(this).data("value");
                 var $idCinema = $(this).data("id");
-                callApiUpdateIsEnable($idCinema, !$isEnable);
+                callApiUpdateIsEnable($idCinema);
             });
 
             $(document).on('click', '.cinema-sort', function () {
                 columnSort = $(this).data("value");
                 sortType = $(this).data("id");
-                callApiGetAllCinema(numberPageCinema, sizeElementCinema, columnSort, sortType);
+                callApiGetAllCinema(numberPageCinema, sizeElementCinema);
             });
 
             $(document).on('click', '.next', function (e) {
                 e.preventDefault();
-                callApiGetAllCinema(total - 1, sizeElementCinema, columnSort, sortType);
+                callApiGetAllCinema(total, sizeElementCinema);
             })
 
             $(document).on('click', '.previous', function (e) {
                 e.preventDefault();
-                callApiGetAllCinema(0, sizeElementCinema, columnSort, sortType);
+                callApiGetAllCinema(1, sizeElementCinema);
             })
 
             $(document).on('click', '#btn-search-cinema', function (e) {
@@ -417,45 +414,50 @@
                 form.append('description', $('#cinema-description-add').val());
 
                 var imageUrl = $('#image-large-add')[0].files[0];
-                form.append('imageUrl', imageUrl);
+                form.append('cinema_image', imageUrl);
 
                 callApiSaveCinema(form);
             })
         }
+
         function callApiSaveCinema(formData) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/cinema",
+                url: "http://127.0.0.1:8000/api/cinema",
                 type: "POST",
                 data: formData,
                 contentType: false,
                 processData: false,
+                headers: {
+                    'Accept' : 'application/json'
+                },
                 success: function (data) {
                     $('.background').hide();
                     toastr.success(data.message);
-                    callApiGetAllCinema(0, localStorage.getItem('sizeElementCinema'), "", "");
+                    callApiGetAllCinema(1, localStorage.getItem('sizeElementCinema'));
                     $('.form-cinema-manager').css('opacity', '0').css('top', '150%');
                     $('.manager-container-cinema').css('opacity', '0').css('z-index', '-1');
                 },
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    toastr.error(response.message);
+                    toastr.error(Object.values(response.errors)[0]);     
                 }
             }
             $.ajax(settings);
         }
 
-        function callApiGetAllCinema(page, size, column, sortType) {
+        function callApiGetAllCinema(page, size) {
             var settings = {
-                url: "http://localhost:8080/api/pub/cinema-paging?size=" + size + "&page=" + page + "&column=" + column + "&sortType=" + sortType,
+                url: "http://127.0.0.1:8000/api/cinema?size=" + size + "&page=" + page,
                 method: "GET",
+                contentType: 'application/json',
                 success: function (response) {
                     $('.paging-number-cinema').empty();
                     $('.list-cinema tbody').empty();
-                    total = response.data.totalPages;
+                    total = response.data.last_page;
                     renderPagingNumberCinema(total, page);
-                    for (var cinema of response.data.content) {
+                    for (var cinema of response.data.data) {
                         renderCinema(cinema);
                     }
                 },
@@ -477,75 +479,75 @@
 
             if (totalPages <= maxPagesToShow) {
                 // Nếu số trang nhỏ hơn số trang tối đa để hiển thị, hiển thị tất cả
-                startPage = 0;
-                endPage = totalPages - 1;
+                startPage = 1;
+                endPage = totalPages;
             } else {
                 // Nếu không, chỉ hiển thị một số trang quanh trang hiện tại
                 if (currentPage <= pageRange) {
-                    startPage = 0;
-                    endPage = maxPagesToShow - 1;
+                    startPage = 1;
+                    endPage = maxPagesToShow;
                 } else if (currentPage + pageRange >= totalPages) {
                     startPage = totalPages - maxPagesToShow;
-                    endPage = totalPages - 1;
+                    endPage = totalPages;
                 } else {
                     startPage = currentPage - pageRange;
                     endPage = currentPage + pageRange;
                 }
             }
 
-            if (startPage > 0) {
+            if (startPage > 1) {
                 pagingCinema.append('<a href="#" class="paging-item paging-item-cinema" data-value="0">1</a>');
-                if (startPage > 1) {
+                if (startPage > 2) {
                     pagingCinema.append('<span class="hidden-paging">...</span>');
                 }
             }
 
             for (let i = startPage; i <= endPage; i++) {
                 const isActive = i === currentPage ? 'active' : '';
-                pagingCinema.append(`<a href="#" class="paging-item paging-item-cinema ${isActive}" data-value="${i}">${i + 1}</a>`);
+                pagingCinema.append(`<a href="#" class="paging-item paging-item-cinema ${isActive}" data-value="${i}">${i}</a>`);
             }
 
-            if (endPage < totalPages - 1) {
-                if (endPage < totalPages - 2) {
+            if (endPage < totalPages) {
+                if (endPage < totalPages) {
                     pagingCinema.append('<span class="hidden-paging">...</span>');
                 }
-                pagingCinema.append(`<a href="#" class="paging-item paging-item-cinema" data-value="${totalPages - 1}">${totalPages}</a>`);
+                pagingCinema.append(`<a href="#" class="paging-item paging-item-cinema" data-value="${totalPages}">${totalPages}</a>`);
             }
 
         }
         function renderCinema(cinema) {
-            let btnEnableDisplay = cinema.isEnabled ? 'inline' : 'none';
-            let btnDisableDisplay = cinema.isEnabled ? 'none' : 'inline';
+            let btnEnableDisplay = cinema.is_enabled ? 'inline' : 'none';
+            let btnDisableDisplay = cinema.is_enabled ? 'none' : 'inline';
             const cinemaTr = `<tr>
-                                <td>${cinema.id}</td>
-                                <td>${cinema.name}</td>
+                                <td>${cinema.cinema_id}</td>
+                                <td>${cinema.cinema_name}</td>
                                 <td>${cinema.address}</td>
                                 <td>
-                                    <button class = "btn-update-isEnable btn-enable cinema-enable" data-id = "${cinema.id}" data-value="${cinema.isEnabled}" style="display: ${btnEnableDisplay}">
+                                    <button class = "btn-update-isEnable btn-enable cinema-enable" data-id = "${cinema.cinema_id}" data-value="${cinema.is_enabled}" style="display: ${btnEnableDisplay}">
                                         <i class="fas fa-eye"></i>
                                         Enabled
                                     </button>
-                                    <button class = "btn-update-isEnable btn-disable =cinema-disable" data-id = "${cinema.id}" data-value="${cinema.isEnabled}" style="display: ${btnDisableDisplay}">
+                                    <button class = "btn-update-isEnable btn-disable =cinema-disable" data-id = "${cinema.cinema_id}" data-value="${cinema.is_enabled}" style="display: ${btnDisableDisplay}">
                                         <i class="fas fa-eye-slash"></i>
                                         Disabled
                                     </button>
                                 </td>
                                 <td>
-                                    <button class="btn-detail btn-detail-cinema-manager" data-id="${cinema.id}">
+                                    <button class="btn-detail btn-detail-cinema-manager" data-id="${cinema.cinema_id}">
                                         <i class="fas fa-info-circle"></i>
                                         Xem chi tiết
                                     </button>
-                                    <button data-id="${cinema.id}" class="btn-manager-room">Quản lý phòng</button>
+                                    <button data-id="${cinema.cinema_id}" class="btn-manager-room">Quản lý phòng</button>
                                 </td>`;
             $('.list-cinema tbody').append(cinemaTr);
         }
 
         function callApiGetCinemaById(id) {
             var settings = {
-                url: "http://localhost:8080/api/pub/cinema/" + id,
+                url: "http://127.0.0.1:8000/api/cinema/" + id,
                 method: "GET",
                 success: function (response) {
-                    renderCinemaDetail(response);
+                    renderCinemaDetail(response.data);
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);
@@ -556,10 +558,11 @@
         }
 
         function renderCinemaDetail(cinema) {
-            $('#cinema-id-update').val(cinema.id);
-            $('#cinema-name-update').val(cinema.name);
+            $('#cinema-id-update').val(cinema.cinema_id);
+            $('#cinema-name-update').val(cinema.cinema_name);
             $('#cinema-address-update').val(cinema.address);
-            $('#img-large').attr('src', cinema.imageUrl);
+            const cinemaUrl = 'http://127.0.0.1:8000/storage/' + cinema.cinema_image_url;
+            $('#img-large').attr('src', cinemaUrl);
             $('#hotline-update').val(cinema.hotline);
             $('#cinema-description-update').val(cinema.description);
         }
@@ -569,13 +572,14 @@
                 e.preventDefault();
                 const cinemaId = parseInt($('#cinema-id-update').val(), 10);
                 var form = new FormData();
+                form.append('_method', 'PUT');
                 form.append('name', $('#cinema-name-update').val());
                 form.append('address', $('#cinema-address-update').val());
                 form.append('hotline', $('#hotline-update').val());
                 form.append('description', $('#cinema-description-update').val());
 
                 var imageUrl = $('#image-large-update')[0].files[0];
-                form.append('imageUrl', imageUrl);
+                form.append('cinema_image', imageUrl);
 
                 callApiUpdateCinema(cinemaId, form);
             })
@@ -584,35 +588,42 @@
         function callApiUpdateCinema(cinemaId, formData) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/cinema/" + cinemaId,
-                type: "PUT",
+                url: "http://127.0.0.1:8000/api/cinema/" + cinemaId,
+                type: "POST",
                 data: formData,
                 contentType: false,
                 processData: false,
+                headers : {
+                    'Accept' : 'application/json'
+                },
                 success: function (data) {
                     $('.background').hide();
                     toastr.success(data.message);
-                    callApiGetAllCinema(0, localStorage.getItem('sizeElementCinema'), "", "");
+                    callApiGetAllCinema(1, localStorage.getItem('sizeElementCinema'));
                     $('.form-cinema-manager').css('opacity', '0').css('top', '150%');
                     $('.manager-container-cinema').css('opacity', '0').css('z-index', '-1');
                 },
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    toastr.error(response.message);
+                    if(xhr.status == 422){
+                        toastr.error(Object.values(response.errors)[0]);     
+                    } else{
+                        toastr.error(response.message);
+                    }
                 }
             }
             $.ajax(settings);
         }
 
-        function callApiUpdateIsEnable(id, isEnable) {
+        function callApiUpdateIsEnable(id) {
             var settings = {
-                url: "http://localhost:8080/api/pub/cinema/updateStatus?id=" + id + "&isEnable=" + isEnable,
-                method: "POST",
+                url: "http://127.0.0.1:8000/api/cinema/" + id,
+                method: "DELETE",
                 contentType: "application/json",
                 success: function (response) {
-                    updateCinemaIsEnable(id, isEnable);
                     toastr.success(response.message);
+                    callApiGetAllCinema(1, localStorage.getItem('sizeElementCinema'));
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);
@@ -620,20 +631,6 @@
                 }
             }
             $.ajax(settings);
-        }
-
-        function updateCinemaIsEnable(id, isEnable) {
-            var $row = $('button[data-id="' + id + '"]').closest('tr');
-            var $btnEnable = $row.find('.btn-enable');
-            var $btnDisable = $row.find('.btn-disable');
-
-            if (isEnable) {
-                $btnEnable.show();
-                $btnDisable.hide();
-            } else {
-                $btnEnable.hide();
-                $btnDisable.show();
-            }
         }
 
         $(document).ready(function () {
