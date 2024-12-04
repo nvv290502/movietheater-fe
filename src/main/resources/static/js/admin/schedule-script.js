@@ -42,15 +42,17 @@ $(document).ready(function () {
   });
 
   fetchCinema().then(function (result) {
-    cinema = result;
+
+    cinema = result.data.data;
+    console.log(cinema);
     var select = $("#cinema");
     select.empty();
     select.append("<option selected value='0'>Chọn Rạp Chiếu Phim</option>");
-    result.forEach(function (cimema) {
+    result.data.data.forEach(function (cimema) {
       select.append(
         $("<option>", {
-          value: cimema.id,
-          text: cimema.name,
+          value: cimema.cinema_id,
+          text: cimema.cinema_name,
         })
       );
     });
@@ -65,11 +67,11 @@ $(document).ready(function () {
           select.empty();
           select.append("<option selected value='0'>Chọn Phòng Chiếu Phim</option>");
 
-          result.forEach(function (room) {
+          result.data.data.forEach(function (room) {
             select.append(
               $("<option>", {
-                value: room.id,
-                text: room.name,
+                value: room.room_id,
+                text: room.room_name,
               })
             );
           });
@@ -492,32 +494,32 @@ function renderCalendar(calendars) {
   var roomId = $("#room").val();
   fetchOldSchedules(roomId)
     .done(function (schedulesData) {
-      const events = schedulesData.map((schedule) => {
-        const startDateTime = `${schedule.date}T${schedule.time}+07:00`;
-        const endDateTime = `${schedule.date}T${schedule.timeEnd}+07:00`;
+      const events = schedulesData.data.map((schedule) => {
+        const startDateTime = `${schedule.schedule_date}T${schedule.schedule_time}+07:00`;
+        const endDateTime = `${schedule.schedule_date}T${schedule.schedule_time}+07:00`;
         const todayDate = getTodayDate();
         // Thêm vào mảng schedules
         schedules.push({
-          itemId: schedule.scheduleId,
-          movieId: 'movie' + schedule.movieId,
+          itemId: schedule.schedule_id,
+          movieId: 'movie' + schedule.movie_id,
           movieName: schedule.movieName,
           start: startDateTime,
           end: endDateTime,
           roomId: roomId,
           cinemaId: $("#cinema").val(),
-          backgroundImage: schedule.movieSmallImageUrl,
+          backgroundImage: schedule.poster_url,
         });
 
         console.log(schedules);
 
         return {
-          title: schedule.movieName,
+          title: schedule.movie_name,
           start: startDateTime,
           end: endDateTime,
           extendedProps: {
-            movieSmallImageUrl: schedule.movieSmallImageUrl,
+            movieSmallImageUrl: schedule.poster_url,
             old: true,
-            itemId: schedule.scheduleId,
+            itemId: schedule.schedule_id,
           },
         };
       });
@@ -533,7 +535,7 @@ function renderCalendar(calendars) {
 
 function fetchOldSchedules(roomId) {
   return $.ajax({
-    url: "http://localhost:8080/api/pub/schedule/" + roomId,
+    url: "http://127.0.0.1:8000/api/room/schedule/" + roomId,
     method: "GET",
     dataType: "json",
     contentType: "application/json",
@@ -685,26 +687,26 @@ function getTodayDate() {
 }
 function getMovie() {
   $.ajax({
-    url: "http://localhost:8080/api/pub/movie/isShowing",
+    url: "http://127.0.0.1:8000/api/showing/movie",
     type: "GET",
     dataType: "json",
-    success: function (movies) {
+    success: function (response) {
       const movieBlock = $("#movie-block");
       movieBlock.empty(); // Xóa nội dung hiện tại
-      movies.forEach((movie) => {
+      response.data.forEach((movie) => {
         const eventDiv = $("<div>", {
-          id: "movie" + movie.id,
-          dataId: movie.id,
+          id: "movie" + movie.movie_id,
+          dataId: movie.movie_id,
           class:
             "fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event mb-1",
-          "data-background-image": movie.imageSmallUrl,
+          "data-background-image": movie.poster_url,
           "data-duration": movie.duration,
           "data-author": movie.author,
         });
 
         const eventMainDiv = $("<div>", {
           class: "fc-event-main",
-          text: movie.name,
+          text: movie.movie_name,
         });
 
         eventDiv.append(eventMainDiv);
@@ -720,10 +722,11 @@ function getMovie() {
 
 function fetchCinema() {
   return $.ajax({
-    url: "http://localhost:8080/api/pub/cinema/active",
+    url: "http://127.0.0.1:8000/api/cinema?size=1000000&isEnabled=1",
     type: "GET",
     dataType: "json",
-    success: function (data) { },
+    success: function (data) {
+     },
     error: function (xhr, status, error) {
       console.error("Error fetching cinemas:", error);
     },
@@ -735,7 +738,7 @@ function fetchCinema() {
 // Hàm thứ hai lấy thông tin phòng
 function fetchRoom(cinemaId) {
   return $.ajax({
-    url: "http://localhost:8080/api/pub/cinema/" + cinemaId + "/rooms/active",
+    url: "http://127.0.0.1:8000/api/isEnabled/cinema/room/" + cinemaId,
     type: "GET",
     dataType: "json",
     success: function (data) { },

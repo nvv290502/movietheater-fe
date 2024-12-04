@@ -173,6 +173,7 @@ body {
   justify-content: center;
   align-items: center;
   border: none;
+  color: white;
 }
 .menu-schedule button:hover,
 .menu-schedule button.active {

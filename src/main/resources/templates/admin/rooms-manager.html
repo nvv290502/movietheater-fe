@@ -339,9 +339,9 @@
                 existingSeat.typeSeat = status;
             } else {
                 updateStatus.push({
-                    rowName: row,
-                    columnName: column,
-                    typeSeat: status
+                    row_name: row,
+                    column_name: column,
+                    type_seat: status
                 });
             }
             console.log(updateStatus);
@@ -453,7 +453,11 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const roomId = urlParams.get('room');
                 callApiSaveLayout(parseInt(roomId, 10), seats);
-                callApiUpdateInitialization(parseInt(roomId, 10), rowNumber, columnNumber);
+                const data = {
+                    rowNumber: rowNumber,
+                    columnNumber: columnNumber
+                }
+                callApiUpdateInitialization(parseInt(roomId, 10), data);
                 $('.update-seat').css('display', 'block');
                 $('.save-layout').css('display', 'none');
             });
@@ -872,9 +876,9 @@
                 const rowLetter = String.fromCharCode(65 + row);
                 for (let col = 1; col <= numColumns; col++) {
                     seats.push({
-                        rowName: rowLetter,
-                        columnName: col,
-                        typeSeat: 'NORMAL'
+                        row_name: rowLetter,
+                        column_name: col,
+                        type_seat: 'NORMAL'
                     });
                 }
             }
@@ -888,13 +892,15 @@
 
         //Hàm gọi api tạo layout phòng
         function callApiSaveLayout(roomId, seats) {
+            console.log(seats);
             $.ajax({
-                url: 'http://localhost:8080/api/pub/room/save-layout/' + roomId,
+                url: 'http://127.0.0.1:8000/api/room/save-layout/' + roomId,
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(seats),
                 success: function (response) {
                     toastr.success(response.message);
+                    console.log(response);
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);
@@ -903,11 +909,12 @@
             });
         }
         //Hàm gọi api cập nhật trạng thái khởi tạo cho phòng
-        function callApiUpdateInitialization(roomId, rowNumber, columnNumber) {
+        function callApiUpdateInitialization(roomId, data) {
             $.ajax({
-                url: 'http://localhost:8080/api/pub/room/update-initialization?roomId=' + roomId + '&seatRowNumbers=' + rowNumber + '&seatColumnNumbers=' + columnNumber,
+                url: 'http://127.0.0.1:8000/api/room/update-initialization/' + roomId,
                 method: 'POST',
                 contentType: 'application/json',
+                data: JSON.stringify(data),
                 success: function (response) {
                     toastr.success(response.message);
                 },
@@ -920,8 +927,8 @@
         //Hàm gọi api cập nhật trạng thái ghế
         function callApiUpdateStatusSeat(roomId, seats) {
             $.ajax({
-                url: 'http://localhost:8080/api/pub/seat/update-status/' + roomId,
-                method: 'PUT',
+                url: 'http://127.0.0.1:8000/api/seat/update-status/' + roomId,
+                method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(seats),
                 success: function (response) {

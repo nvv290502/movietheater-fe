@@ -142,9 +142,11 @@
     font-weight: 600;
     font-size: 20px;
     border-bottom: 1px solid rgb(89, 204, 204);
+    color: white;
 }
 .form-add-layout-content {
     padding: 20px 0;
+    color: white;
 }
 .form-group {
     display: flex;
