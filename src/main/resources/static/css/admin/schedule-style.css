@@ -220,6 +220,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+  height: 100% !important;
 }
 .fc-v-event .fc-event-main-frame {
   background-color: rgba(0, 0, 0, 0.5);
@@ -263,4 +264,7 @@ body {
 .swal2-icon {
   width: 50px !important;
   height: 50px !important;
+}
+.fc-col-header-cell{
+  color: rgb(95, 95, 95) !important;
 }

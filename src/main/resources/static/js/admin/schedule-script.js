@@ -308,7 +308,7 @@ function renderCalendar(calendars) {
             alt: "Movie Image",
             css: {
               width: '100%',
-              height: 'auto',
+              height: '100%',
               maxHeight: '100%',
               objectFit: 'cover',
               display: "block",
@@ -439,6 +439,8 @@ function renderCalendar(calendars) {
           }
           return schedule;
         });
+
+        console.log(schedules);
       }
     },
     eventChange: function (info) {
@@ -496,7 +498,8 @@ function renderCalendar(calendars) {
     .done(function (schedulesData) {
       const events = schedulesData.data.map((schedule) => {
         const startDateTime = `${schedule.schedule_date}T${schedule.schedule_time}+07:00`;
-        const endDateTime = `${schedule.schedule_date}T${schedule.schedule_time}+07:00`;
+        // const endDateTime = `${schedule.schedule_date}T${schedule.schedule_time}+07:00`;
+        const endTime = new Date(new Date(startDateTime).getTime() + schedule.duration * 60000).toISOString(); 
         const todayDate = getTodayDate();
         // Thêm vào mảng schedules
         schedules.push({
@@ -504,7 +507,7 @@ function renderCalendar(calendars) {
           movieId: 'movie' + schedule.movie_id,
           movieName: schedule.movieName,
           start: startDateTime,
-          end: endDateTime,
+          end: endTime,
           roomId: roomId,
           cinemaId: $("#cinema").val(),
           backgroundImage: schedule.poster_url,
@@ -515,7 +518,7 @@ function renderCalendar(calendars) {
         return {
           title: schedule.movie_name,
           start: startDateTime,
-          end: endDateTime,
+          end: endTime,
           extendedProps: {
             movieSmallImageUrl: schedule.poster_url,
             old: true,
@@ -588,7 +591,7 @@ function saveSchedule(schedules) {
     };
 
     var request = $.ajax({
-      url: "http://localhost:8080/api/pub/schedule",
+      url: "http://127.0.0.1:8000/api/schedule",
       method: "POST",
       contentType: "application/json",
       data: JSON.stringify(scheduleData),
@@ -629,12 +632,14 @@ function saveSchedule(schedules) {
   var requests2 = [];
   $.when.apply($, requests).done(function () {
     if (!hasError) { // Chỉ thông báo thành công nếu không có lỗi
+
       newSchedules.forEach(function (schedule) {
-        const scheduleId = schedule;
+        const scheduleId = schedule.data.schedule_id;
+        console.log(scheduleId);
         const roomIdINT = parseInt(roomId, 10);
 
         var request = $.ajax({
-          url: "http://localhost:8080/api/pub/schedule/showtime",
+          url: "http://127.0.0.1:8000/api/showtime",
           method: "POST",
           contentType: "application/json",
           data: JSON.stringify({
