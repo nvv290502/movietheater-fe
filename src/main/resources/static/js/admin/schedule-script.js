@@ -304,7 +304,7 @@ function renderCalendar(calendars) {
         var backgroundImage = info.event.extendedProps.movieSmallImageUrl;
         if (backgroundImage) {
           let imgElement = $("<img>", {
-            src: info.event.extendedProps.movieSmallImageUrl,
+            src: 'http://127.0.0.1:8000/storage/' + info.event.extendedProps.movieSmallImageUrl,
             alt: "Movie Image",
             css: {
               width: '100%',
@@ -459,6 +459,7 @@ function renderCalendar(calendars) {
         }
         return schedule;
       });
+    console.log(schedules);
     },
     datesSet: function (info) {
       const isTimeGridWeek = info.view.type === 'timeGridWeek';
@@ -505,7 +506,7 @@ function renderCalendar(calendars) {
         schedules.push({
           itemId: schedule.schedule_id,
           movieId: 'movie' + schedule.movie_id,
-          movieName: schedule.movieName,
+          movieName: schedule.movie_name,
           start: startDateTime,
           end: endTime,
           roomId: roomId,
