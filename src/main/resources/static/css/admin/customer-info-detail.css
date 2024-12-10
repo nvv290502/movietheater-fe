@@ -142,6 +142,7 @@
 .booking-history p {
     font-size: 15px;
     font-weight: 600;
+    color: white;
 }
 
 .booking-table {
@@ -158,12 +159,7 @@
 }
 
 .booking-table th {
-    background-color: #f2f2f2;
     font-weight: bold;
-}
-
-.booking-table tr:nth-child(even) {
-    background-color: #f9f9f9;
 }
 
 .status-paid {

@@ -54,7 +54,7 @@
                             <div class="form-group">
                                 <label for="username">Tên đăng nhập</label>
                                 <input type="text" id="username" value="" required readonly
-                                    style="background-color: #ccc;">
+                                    style="background-color:  #504f4f;">
                             </div>
                             <div class="form-group">
                                 <label for="password">Mật khẩu</label>
@@ -68,7 +68,7 @@
                             <div class="form-group">
                                 <label for="email">Email</label>
                                 <input type="email" id="email" value="phamdinhrien@gmail.com" required readonly
-                                    style="background-color: #ccc;">
+                                    style="background-color:  #504f4f;">
                             </div>
 
                             <div class="form-group">
@@ -83,8 +83,10 @@
 
                             <div class="form-group">
                                 <label for="role">Quyền</label>
-                                <select id="role" required disabled style="background-color: #ccc;">
+                                <select id="role" required disabled style="background-color: #504f4f;">
                                     <option value="ROLE_USER">USER</option>
+                                    <option value="ROLE_ADMIN">ADMIN</option>
+                                    <option value="ROLE_MANAGER">MANAGER</option>
                                 </select>
                             </div>
 
@@ -97,11 +99,11 @@
                             </div>
                             <div class="form-group">
                                 <label for="phone">Ngày tạo</label>
-                                <input type="text" id="created-date" readonly style="background-color: #ccc;">
+                                <input type="text" id="created-date" readonly style="background-color: #504f4f;">
                             </div>
                             <div class="form-group">
                                 <label for="rank">Cấp bậc</label>
-                                <select id="rank" required disabled style="background-color: #ccc;">
+                                <select id="rank" required disabled style="background-color: #504f4f;">
                                     <option value="BASIC">BASIC</option>
                                     <option value="SILVER">SILVER</option>
                                     <option value="GOLD">GOLD</option>
@@ -271,12 +273,13 @@
         <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="/js/admin/account-manager.js"></script>
+        <script src="/js/index.js"></script>
         <script>
 
             var sumOld = 0;
             var totalPage;
             var size = 10;
-            var page = 0;
+            var page = 1;
             var urlParams = new URLSearchParams(window.location.search);
             var userId = urlParams.get('user');
 
@@ -370,19 +373,19 @@
             //gọi api lấy thông tin khách hàng theo id
             function callApiGetCustomerById(id) {
                 var settings = {
-                    url: "http://localhost:8080/account/" + id,
+                    url: "http://127.0.0.1:8000/api/user/" + id,
                     method: "GET",
                     headers: {
                         Authorization: "Bearer " + localStorage.getItem("accessToken"),
                     },
                     success: function (response) {
                         renderCustomerDetail(response.data);
-                        $('.title-customer-name').text(response.data.fullName);
-                        $('.booking-history-full-name').text(response.data.fullName);
+                        $('.title-customer-name').text(response.data.full_name);
+                        $('.booking-history-full-name').text(response.data.full_name);
                     },
                     error: function (xhr) {
                         var response = JSON.parse(xhr.responseText);
-                        console.error(response.message);
+                        console.error(response[0].message);
                         toastr.error("Có lỗi khi tải dữ liệu!");
                     },
                 };
@@ -390,18 +393,18 @@
             }
             //hàm lấy dữ liệu thông tin chi tiết khách hàng hiển thị lên giao diện
             function renderCustomerDetail(customer) {
-                $("#user-id").val(customer.id);
-                $("#image-avatar-detail").attr("src", customer.avatarUrl);
+                $("#user-id").val(customer.user_id);
+                $("#image-avatar-detail").attr("src",BASE_URL + customer.avatar_url);
                 $("#username").val(customer.username);
-                $("#fullName").val(customer.fullName);
+                $("#fullName").val(customer.full_name);
                 $("#email").val(customer.email);
                 $("#dob").val(customer.dob);
                 $("#phone").val(customer.phone);
-                $("#role").val(customer.roles[0].roleName);
-                const status = customer.isConfirm ? 'active' : 'inactive';
+                $("#role").val(customer.role_name);
+                const status = customer.is_confirm ? 'active' : 'inactive';
                 $('#status').val(status);
-                $('#created-date').val(formatDateTime(customer.createdDate));
-                $('#rank').val(customer.membershipLevel);
+                $('#created-date').val(formatDateTime(customer.created_at));
+                $('#rank').val(customer.member_ship_level);
             }
             //Hàm cập nhật thông tin khách hàng
             function updateCustomerInfo() {
@@ -409,16 +412,24 @@
                     e.preventDefault();
                     var form = new FormData();
                     var avatarUrl = $("#customer-avatar-input")[0].files[0];
-                    form.append("id", parseInt($("#user-id").val(), 10));
+                    const id = parseInt($("#user-id").val(), 10);
+                    form.append('_method','PUT');
                     form.append("username", $("#username").val());
-                    form.append("fullName", $("#fullName").val());
+                    form.append("full_name", $("#fullName").val());
                     form.append("email", $("#email").val());
                     form.append("phone", $("#phone").val());
-                    form.append("roleName", $("#role").val());
-                    const isConfirm = $('#status').val() === 'active' ? 'true' : 'false';
-                    form.append("isConfirm", isConfirm);
-                    form.append("membershipLevel", $('#rank').val());
-                    form.append("avatarUrl", avatarUrl);
+                    // form.append("roleName", $("#role").val());
+                    const isConfirm = $('#status').val() === 'active' ? '1' : '0';
+                    form.append("is_confirm", isConfirm);
+
+                    if($('#rank').val() != null){
+                        form.append("member_ship_level", $('#rank').val());
+                    }
+
+                    if(avatarUrl != undefined){
+                        form.append("avatar_url", avatarUrl);
+                    }
+
                     var dob = new Date($("#dob").val());
                     var formattedDate = "";
                     if (!isNaN(dob.getTime())) {
@@ -426,25 +437,25 @@
                     }
                     form.append("dob", formattedDate);
 
-                    callApiUpdateCustomerInfo(form);
+                    callApiUpdateCustomerInfo(form, id);
                 });
             }
 
             //Hàm gọi api cập nhật thông tin khách hàng
-            function callApiUpdateCustomerInfo(formData) {
+            function callApiUpdateCustomerInfo(formData, id) {
                 $('.background').show();
                 var settings = {
-                    url: "http://localhost:8080/account/update/customer",
-                    type: "PUT",
+                    url: "http://127.0.0.1:8000/api/user/" + id,
+                    type: "POST",
                     data: formData,
                     contentType: false,
                     processData: false,
                     headers: {
                         Authorization: "Bearer " + localStorage.getItem("accessToken"),
                     },
-                    success: function (data) {
+                    success: function (response) {
                         $('.background').hide();
-                        toastr.success(data.message);
+                        toastr.success(response.message);
                     },
                     error: function (xhr) {
                         $('.background').hide();

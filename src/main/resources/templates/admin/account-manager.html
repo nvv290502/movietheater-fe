@@ -58,8 +58,8 @@
                 <th>Ảnh đại diện</th>
                 <th class="th-search">
                   <span>Họ tên</span>
-                  <i class="fas fa-search search-icon" data-column="fullName"></i>
-                  <input type="text" class="search-input" data-column="fullName" placeholder="Tìm kiếm theo tên...">
+                  <i class="fas fa-search search-icon" data-column="full_name"></i>
+                  <input type="text" class="search-input" data-column="full_name" placeholder="Tìm kiếm theo tên...">
                 </th>
                 <th>Số điện thoại</th>
                 <th class="th-search">
@@ -143,15 +143,14 @@
   <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="/js/admin/account-manager.js"></script>
+  <script src="/js/index.js"></script>
   <script>
     var total = 0;
     var allAccounts = [];
     var filteredAccounts = [];
     var searchTerms = {};
     var sizeElementAccount = localStorage.getItem("sizeElementAccount") || 6;
-    var numberPageAccount = 0;
-    var columnSort = "";
-    var sortType = "";
+    var numberPageAccount = 1;
     $(document).ready(function () {
 
       $(".menu-admin").load("/menu", function () {
@@ -188,12 +187,12 @@
       $(".number-element-of-page-account").val(sizeElementAccount);
 
       saveAccount();
-      callApiGetAllAccount(numberPageAccount, sizeElementAccount, "", "");
+      callApiGetAllAccount(numberPageAccount, 10000000000);
 
       $(document).on("change", ".number-element-of-page-account", function () {
         sizeElementAccount = parseInt($(this).val());
         localStorage.setItem("sizeElementAccount", sizeElementAccount);
-        numberPageAccount = 0;
+        numberPageAccount = 1;
         renderAccounts();
       });
 
@@ -205,13 +204,13 @@
 
       $(document).on("click", ".next", function (e) {
         e.preventDefault();
-        numberPageAccount = total - 1;
+        numberPageAccount = total;
         renderAccounts();
       });
 
       $(document).on("click", ".previous", function (e) {
         e.preventDefault();
-        numberPageAccount = 0;
+        numberPageAccount = 1;
         renderAccounts();
       });
 
@@ -223,9 +222,8 @@
       });
 
       $(document).on("click", ".btn-update-isEnable", function () {
-        var $isEnable = $(this).data("value");
         var $idAccount = $(this).data("id");
-        callApiUpdateIsEnable($idAccount, !$isEnable);
+        callApiUpdateIsEnable($idAccount);
       });
 
       // Thực hiện tìm kiếm khi nhập vào thanh tìm kiếm
@@ -244,22 +242,25 @@
   <script>
 
     //Hàm gọi api lấy danh sách khách hàng
-    function callApiGetAllAccount(page, size, column, sortType) {
+    function callApiGetAllAccount(page, size) {
       var settings = {
-        url: "http://localhost:8080/user?size" + size + "&page=" + page + "&column=" + column + "&sortType=" + sortType,
+        url: "http://127.0.0.1:8000/api/user?size=" + size + "&page=" + page,
         method: "GET",
         headers: {
           Authorization: "Bearer " + localStorage.getItem("accessToken"),
         },
         success: function (response) {
-          allAccounts = response.data.content;
+          allAccounts = response.data;
           filteredAccounts = allAccounts;
-          total = response.data.totalPages;
+          total = Math.ceil(filteredAccounts.length / sizeElementAccount);
           renderAccounts();
         },
         error: function (xhr) {
           var response = JSON.parse(xhr.responseText);
-          console.log(response.message);
+          if(response[0].status == 401){
+            window.location.href = "/login";
+          }
+          console.log(response[0].message);
         },
       };
       $.ajax(settings);
@@ -269,8 +270,10 @@
       filteredAccounts = allAccounts.filter(account => {
         return Object.entries(searchTerms).every(([column, term]) => {
           switch (column) {
-            case 'fullName':
-              return account.fullName.toLowerCase().includes(term);
+            case 'full_name':
+              if(account.full_name != null){
+                return account.full_name.toLowerCase().includes(term);
+              }
             case 'email':
               return account.email.toLowerCase().includes(term);
             default:
@@ -278,13 +281,13 @@
           }
         });
       });
-      numberPageAccount = 0;
+      numberPageAccount = 1;
       renderAccounts();
     }
 
     function renderAccounts() {
       $(".list-account tbody").empty();
-      const startIndex = numberPageAccount * sizeElementAccount;
+      const startIndex = (numberPageAccount - 1) * sizeElementAccount;
       const endIndex = startIndex + parseInt(sizeElementAccount);
       const accountsToShow = filteredAccounts.slice(startIndex, endIndex);
 
@@ -295,6 +298,7 @@
           renderAccount(user);
         }
       }
+      console.log(Math.ceil(filteredAccounts.length / sizeElementAccount));
       renderPagingNumberAccount(Math.ceil(filteredAccounts.length / sizeElementAccount), numberPageAccount);
     }
 
@@ -307,22 +311,22 @@
       let startPage, endPage;
 
       if (totalPages <= maxPagesToShow) {
-        startPage = 0;
-        endPage = totalPages - 1;
+        startPage = 1;
+        endPage = totalPages;
       } else {
         if (currentPage <= pageRange) {
-          startPage = 0;
-          endPage = maxPagesToShow - 1;
+          startPage = 1;
+          endPage = maxPagesToShow;
         } else if (currentPage + pageRange >= totalPages) {
           startPage = totalPages - maxPagesToShow;
-          endPage = totalPages - 1;
+          endPage = totalPages;
         } else {
           startPage = currentPage - pageRange;
           endPage = currentPage + pageRange;
         }
       }
 
-      if (startPage > 0) {
+      if (startPage > 1) {
         pagingAccount.append(
           '<a href="#" class="paging-item paging-item-account" data-value="0">1</a>'
         );
@@ -334,26 +338,26 @@
       for (let i = startPage; i <= endPage; i++) {
         const isActive = (i === currentPage) ? "active" : "";
         pagingAccount.append(
-          `<a href="#" class="paging-item paging-item-account ${isActive}" data-value="${i}">${i + 1
+          `<a href="#" class="paging-item paging-item-account ${isActive}" data-value="${i}">${i
           }</a>`
         );
       }
 
-      if (endPage < totalPages - 1) {
-        if (endPage < totalPages - 2) {
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
           pagingAccount.append('<span class="hidden-paging">...</span>');
         }
         pagingAccount.append(
-          `<a href="#" class="paging-item paging-item-account" data-value="${totalPages - 1
+          `<a href="#" class="paging-item paging-item-account" data-value="${totalPages
           }">${totalPages}</a>`
         );
       }
     }
 
     function renderAccount(user) {
-      let btnEnableDisplay = user.isEnabled ? 'inline' : 'none';
-      let btnDisableDisplay = user.isEnabled ? 'none' : 'inline';
-      let createdDate = user.createdDate;
+      let btnEnableDisplay = user.is_enabled ? 'inline' : 'none';
+      let btnDisableDisplay = user.is_enabled ? 'none' : 'inline';
+      let createdDate = user.created_at;
       let formatDate;
       if (createdDate != null) {
         formatDate = formatDateTime(createdDate);
@@ -361,7 +365,7 @@
 
       // Xác định lớp CSS cho rank
       let rankClass = '';
-      switch (user.membershipLevel) {
+      switch (user.member_ship_level) {
         case 'BASIC':
           rankClass = 'rank-basic';
           break;
@@ -380,23 +384,23 @@
       }
 
       // Xác định lớp CSS cho trạng thái
-      let statusClass = user.isConfirm ? 'status-active' : 'status-inactive';
+      let statusClass = user.is_confirm ? 'status-active' : 'status-inactive';
 
       const userTr = `<tr>
                             <td>
-                              <img class="user-avatar" src="${user.avatarUrl}" alt="${user.username}"/>
+                              <img class="user-avatar" src="${BASE_URL + user.avatar_url}" alt="${user.username}"/>
                             </td>
-                            <td><a href="#" class="btn-customer-detail" data-customer-id="${user.id}">${user.fullName}</a></td>
+                            <td><a href="#" class="btn-customer-detail" data-customer-id="${user.user_id}">${user.full_name}</a></td>
                             <td>${user.phone}</td>
                             <td>${user.email}</td>
-                            <td><span class="${rankClass}">${user.membershipLevel}</span></td>
-                            <td><span class="${statusClass}">${user.isConfirm ? "Đã kích hoạt" : "Chưa kích hoạt"}</span></td>
+                            <td><span class="${rankClass}">${user.member_ship_level}</span></td>
+                            <td><span class="${statusClass}">${user.is_confirm ? "Đã kích hoạt" : "Chưa kích hoạt"}</span></td>
                             <td>${formatDate}</td>
                             <td>
-                                <button class = "btn-update-isEnable btn-enable account-enable" data-id = "${user.id}" data-value="${user.isEnabled}" style="display: ${btnEnableDisplay}">
+                                <button class = "btn-update-isEnable btn-enable account-enable" data-id = "${user.user_id}" data-value="${user.is_enabled}" style="display: ${btnEnableDisplay}">
                                   <i class="fas fa-unlock-alt"></i>
                                 </button>
-                                <button class = "btn-update-isEnable btn-disable account-disable" data-id = "${user.id}" data-value="${user.isEnabled}" style="display: ${btnDisableDisplay}">
+                                <button class = "btn-update-isEnable btn-disable account-disable" data-id = "${user.user_id}" data-value="${user.is_enabled}" style="display: ${btnDisableDisplay}">
                                   <i class="fas fa-lock"></i>
                                 </button>
                             </td>
@@ -455,26 +459,17 @@
       $.ajax(settings);
     }
 
-    function callApiUpdateIsEnable(id, isEnable) {
+    function callApiUpdateIsEnable(id) {
       var settings = {
         url:
-          "http://localhost:8080/account/isEnable?id=" +
-          id +
-          "&isEnable=" +
-          isEnable,
+          "http://127.0.0.1:8000/api/user/is-enabled/" + id,
         method: "POST",
         contentType: "application/json",
         headers: {
           Authorization: "Bearer " + localStorage.getItem("accessToken"),
         },
         success: function (response) {
-          updateAccountIsEnable(id, isEnable);
-          callApiGetAllAccount(
-            0,
-            localStorage.getItem("sizeElementAccount"),
-            "",
-            ""
-          );
+          callApiGetAllAccount(1, 10000000000000);
           toastr.success(response.message);
         },
         error: function (xhr) {
@@ -485,19 +480,6 @@
       $.ajax(settings);
     }
 
-    function updateAccountIsEnable(id, isEnable) {
-      var $row = $('button[data-id="' + id + '"]').closest("tr");
-      var $btnEnable = $row.find(".btn-enable");
-      var $btnDisable = $row.find(".btn-disable");
-
-      if (isEnable) {
-        $btnEnable.show();
-        $btnDisable.hide();
-      } else {
-        $btnEnable.hide();
-        $btnDisable.show();
-      }
-    }
     //Hàm định dạng kiểu localDateTime
     function formatDateTime(dateTimeString) {
       const date = new Date(dateTimeString);

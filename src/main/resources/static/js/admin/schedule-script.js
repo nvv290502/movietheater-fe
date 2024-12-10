@@ -539,7 +539,7 @@ function renderCalendar(calendars) {
 
 function fetchOldSchedules(roomId) {
   return $.ajax({
-    url: "http://127.0.0.1:8000/api/room/schedule/" + roomId,
+    url: "http://127.0.0.1:8000/api/schedule/room/" + roomId,
     method: "GET",
     dataType: "json",
     contentType: "application/json",
@@ -583,7 +583,7 @@ function saveSchedule(schedules) {
     const endTimePart = endIsoString.split("T")[1].slice(0, 8);
 
     var scheduleData = {
-      scheduleId: schedule.itemId,
+      scheduleId: isNaN(schedule.itemId) ? null : schedule.itemId,
       roomId: parseInt(roomId, 10),
       movieId: parseInt(schedule.movieId.replace(/\D/g, ""), 10),
       date: startDatePart,
@@ -693,7 +693,7 @@ function getTodayDate() {
 }
 function getMovie() {
   $.ajax({
-    url: "http://127.0.0.1:8000/api/showing/movie",
+    url: "http://127.0.0.1:8000/api/movie/showing",
     type: "GET",
     dataType: "json",
     success: function (response) {
@@ -744,7 +744,7 @@ function fetchCinema() {
 // Hàm thứ hai lấy thông tin phòng
 function fetchRoom(cinemaId) {
   return $.ajax({
-    url: "http://127.0.0.1:8000/api/isEnabled/cinema/room/" + cinemaId,
+    url: "http://127.0.0.1:8000/api/room/is-enabled/cinema/" + cinemaId,
     type: "GET",
     dataType: "json",
     success: function (data) { },

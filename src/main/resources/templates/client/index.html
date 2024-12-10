@@ -298,6 +298,7 @@
   <script src="/css/bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js"></script>
   <script src="/js/client/slide.js"></script>
   <script src="/js/client/index.js"></script>
+  <script src="/js/index.js"></script>
   <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick.min.js"></script>
   <!-- <script src="/js/resetLocalStorage.js"></script> -->
@@ -329,12 +330,12 @@
       });
 
       callApiGetMovie(
-        "http://localhost:8080/api/pub/movie/showToDay",
+        "http://127.0.0.1:8000/api/movie/show-today",
         $(".content-movie-show-to-day")
       );
       callApiGetTop10Movie();
       callApiGetMovie(
-        "http://localhost:8080/api/pub/movie/upcomingReleases",
+        "http://127.0.0.1:8000/api/movie/upcoming",
         $(".content-movie-upcoming-show")
       );
 
@@ -501,14 +502,14 @@
     }
 
     function renderMovie(movie, divParent) {
-      const releasedDate = formatDate(movie.releasedDate);
+      const releasedDate = formatDate(movie.release_date);
       const movieCard = `<div class="card-movie">
                     <div class="card-movie-image">
-                        <img src="${movie.imageSmallUrl}"
-                             alt="${movie.name}">
+                        <img src="${BASE_URL + movie.poster_url}"
+                             alt="${movie.movie_name}">
                         <div class="btn-movie">
-                            <button class="detail-movie btn-buy-ticket" data-id="${movie.id}"><i class="fas fa-ticket-alt"></i> <span>Mua vé</span></button>
-                            <button class="detail-movie btn-detail-movie" data-id="${movie.id}"><i class="fa-solid fa-circle-info"></i> <span>Chi tiết</span></button>
+                            <button class="detail-movie btn-buy-ticket" data-id="${movie.movie_id}"><i class="fas fa-ticket-alt"></i> <span>Mua vé</span></button>
+                            <button class="detail-movie btn-detail-movie" data-id="${movie.movie_id}"><i class="fa-solid fa-circle-info"></i> <span>Chi tiết</span></button>
                         </div>
                     </div>
                     <div class="content-card">
@@ -523,7 +524,7 @@
                         </div>
                         <div class="title-card">
                             <p>
-                                ${movie.name}
+                                ${movie.movie_name}
                             </p>
                         </div>
                         <div class="follow-movie">

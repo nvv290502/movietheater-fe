@@ -226,11 +226,20 @@
       //Hàm call api lấy danh sách phim theo id
       function callApiGetMovieById(id) {
         var settings = {
-          url: "http://localhost:8080/api/pub/movie/" + id,
+          url: "http://127.0.0.1:8000/api/movie/" + id,
           method: "GET",
           success: function (response) {
-            renderInfoMovie(response.data);
-            callApiGetMovieRelated(response.data.categoryId);
+
+            const data = response.data;
+            renderInfoMovie(data);
+
+            let categoryIds = [];
+
+            for (let category of response.data.categories) {
+              categoryIds.push(category.category_id);
+            }
+
+            callApiGetMovieRelated(categoryId);
             displaySummary();
           },
           error: function (xhr) {
@@ -244,10 +253,10 @@
       //Hàm call api lấy danh sách category theo id
       function callApiGetCategoryById(id) {
         var settings = {
-          url: "http://localhost:8080/api/pub/category/" + id,
+          url: "http://127.0.0.1:8000/api/category/" + id,
           method: "GET",
           success: function (response) {
-            categoryName.push(response.data.name);
+            categoryName.push(response.data.category_name);
             count--;
             if (count === 0) {
               renderCategoryName();
@@ -263,18 +272,25 @@
       }
       //Hàm map data phim lên giao diện
       function renderInfoMovie(movie) {
-        $('#movie-name').text(movie.name);
+        $('#movie-name').text(movie.movie_name);
         $('#movie-duration').text(movie.duration);
-        $('#movie-released-date').text(formatDate(movie.releasedDate));
-        $('#movie-small-image').attr('src', movie.imageSmallUrl).attr('alt', movie.name);
-        $('.movie-detail-image').attr('src', movie.imageLargeUrl);
+        $('#movie-released-date').text(formatDate(movie.release_date));
+        $('#movie-small-image').attr('src', movie.poster_url).attr('alt', movie.movie_name);
+        $('.movie-detail-image').attr('src', movie.banner_url);
         $('#movie-author').text(movie.author);
         $('#movie-actor').text(movie.actor);
         $('#movie-language').text(movie.language);
         $('#movie-summary').text(movie.summary);
-        $('#movie-trailer').attr('src', 'https://www.youtube.com/embed/' + movie.trailerUrl);
-        count = movie.categoryId.length;
-        for (let id of movie.categoryId) {
+        $('#movie-trailer').attr('src', 'https://www.youtube.com/embed/' + movie.trailer);
+
+        const categoryIds = [];
+
+        for (let category of response.data.categories) {
+          categoryIds.push(category.category_id);
+        }
+        
+        count = categoryIds.length;
+        for (let id of categoryIds) {
           callApiGetCategoryById(id);
         }
       }
