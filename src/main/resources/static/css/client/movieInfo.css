@@ -27,7 +27,7 @@
 .movie-detail-top-bg .movie-detail-top {
     width: 100%;
     height: auto;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.87);
 }
 
 .movie-detail-top .movie-top-info {
@@ -60,6 +60,7 @@
     text-transform: uppercase;
     margin-bottom: 0;
     margin-left: 20px;
+    color: white;
 }
 
 .movie-info-container {
@@ -93,6 +94,7 @@
     text-overflow: ellipsis;
     margin-bottom: 0;
     transition: max-height 0.5s ease;
+    color: white;
 }
 
 .movie-summary-container .see-more {
@@ -162,9 +164,9 @@
     color: white;
 }
 .movie-info .action .like {
-    color: #283e59;
-    background-color: rgba(40, 62, 89, 0.5);
-    border: 1px solid #283e59;
+    color: #acbed5;
+    background-color: rgba(115, 144, 180, 0.5);
+    border: 1px solid #acbed5;
 }
 .movie-info .action .like.liked {
     background-color: rgb(211, 49, 49);
@@ -222,6 +224,7 @@
     justify-content: center;
     align-items: center;
     text-transform: uppercase;
+    color: white;
 }
 
 .movie-detail-bottom .menu a:hover {

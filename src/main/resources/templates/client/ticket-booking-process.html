@@ -361,15 +361,15 @@
 
         function callApiGetMovieById(id) {
             var settings = {
-                url: "http://localhost:8080/api/pub/movie/" + id,
+                url: "http://127.0.0.1:8000/api/movie/" + id,
                 method: "GET",
                 success: function (response) {
-                    movieName = response.data.name;
+                    movieName = response.data.movie_name;
                     $('.movie-choosed-name').text(movieName);
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);
-                    console.log(response.message);
+                    console.log(response[0].message);
                 }
             }
             $.ajax(settings);

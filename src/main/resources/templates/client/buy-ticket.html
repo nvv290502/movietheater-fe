@@ -77,10 +77,11 @@
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="/js/client/slide.js"></script>
     <script src="/js/client/login.js"></script>
-    <script src="/js/client/checkToken.js"></script>
+    <!-- <script src="/js/client/checkToken.js"></script> -->
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="/js/index.js"></script>
     <script>
         $(document).ready(function () {
             $('#header').load("/header", function () {
@@ -219,7 +220,7 @@
         function callApiGetMovieById(id) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/movie/" + id,
+                url: "http://127.0.0.1:8000/api/movie/" + id,
                 method: "GET",
                 success: function (response) {
                     $('.background').hide();
@@ -238,11 +239,11 @@
         function callApiGetCategoryById(id) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/category/" + id,
+                url: "http://127.0.0.1:8000/api/category/" + id,
                 method: "GET",
                 success: function (response) {
                     $('.background').hide();
-                    categoryName.push(response.data.name);
+                    categoryName.push(response.data.category_name);
                     count--;
                     if (count === 0) {
                         renderCategoryName();
@@ -251,7 +252,7 @@
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    console.log(response.message);
+                    console.log(response[0].message);
                 }
             }
 
@@ -260,11 +261,17 @@
 
         //Hàm map data phim lên giao diện
         function renderInfoMovie(movie) {
-            $('#info-name').text(movie.name);
+            $('#info-name').text(movie.movie_name);
             $('#info-duration').text(movie.duration + " phút");
-            $('#info-image').attr('src', movie.imageLargeUrl).attr('alt', movie.name);
-            count = movie.categoryId.length;
-            for (let id of movie.categoryId) {
+            $('#info-image').attr('src',BASE_URL +  movie.banner_url).attr('alt', movie.movie_name);
+            categoryId = [];
+
+            for(let category of movie.categories){
+                categoryId.push(category.category_id);
+            }
+
+            count = categoryId.length;
+            for (let id of categoryId) {
                 callApiGetCategoryById(id);
             }
         }
@@ -272,26 +279,25 @@
         //Hàm map data thể loại lên giao diện
         function renderCategoryName() {
             var categoryString = categoryName.join(', ');
-            console.log(categoryString);
             $('#info-category').text(categoryString);
         }
 
         //Hàm call api lấy danh sách rạp có suất chiếu theo thành phố, ngày chiếu, phim
         function callApiGetCinema(city, date, id) {
             var settings = {
-                url: "http://localhost:8080/api/pub/cinema/showtime?movieId=" + id + "&city=" + city + "&showDate=" + date,
+                url: "http://127.0.0.1:8000/api/cinema/showtime?movie=" + id + "&city=" + city + "&date=" + date,
                 method: "GET",
                 contentType: "application/json",
                 success: function (response) {
                     let chooseCinemaParent = $('.choose-cinema-parent');
                     chooseCinemaParent.empty();
-                    if (response.length === 0) {
+                    if (response.data.length === 0) {
                         chooseCinemaParent.append('<p>Không có suất chiếu!</p>');
                     }
                     else {
-                        for (let cinema of response) {
+                        for (let cinema of response.data) {
                             renderCinema(cinema);
-                            callApiGetShowtime(id, city, date, cinema.id);
+                            callApiGetShowtime(id, city, date, cinema.cinema_id);
                             restoreSelectedCinema();
                         }
                     }
@@ -306,11 +312,11 @@
 
         function renderCinema(cinema) {
             const div = `<div class="choose-cinema">
-                           <div class="cinema-item" data-cinema-id="${cinema.id}">
-                            <img src="${cinema.imageUrl}"
-                                alt="${cinema.name}" class="cinema-image">
+                           <div class="cinema-item" data-cinema-id="${cinema.cinema_id}">
+                            <img src="${BASE_URL + cinema.cinema_image_url}"
+                                alt="${cinema.cinema_name}" class="cinema-image">
                             <div class="cinema-info">
-                                <p class="cinema-name">${cinema.name}</p>
+                                <p class="cinema-name">${cinema.cinema_name}</p>
                                 <p class="cinema-address">${cinema.address}</p><br>
                                 <a href="" class="cinema-detail">Chi tiết rạp</a>
                             </div>
@@ -325,11 +331,12 @@
         //Hàm gọi api lấy danh sách suất chiếu.
         function callApiGetShowtime(movieId, city, date, cinemaId) {
             var settings = {
-                url: "http://localhost:8080/api/pub/schedule/byCinema?movieId=" + movieId + "&city=" + city + "&showDate=" + date + "&cinemaId=" + cinemaId,
+                url: "http://127.0.0.1:8000/api/schedule/cinema?movie_id=" + movieId + "&city=" + city + "&date=" + date + "&cinema_id=" + cinemaId,
                 method: "GET",
                 contentType: "application/json",
                 success: function (response) {
-                    for (let sch of response) {
+                    console.log(response);
+                    for (let sch of response.data) {
                         renderShowTime(sch, cinemaId);
                     }
                     var showTime = localStorage.getItem('showTime') || "";
@@ -352,7 +359,7 @@
         const displayedTimesByCinema = new Map();
 
         function renderShowTime(schedule, cinemaId) {
-            let showDateTime = new Date(schedule.date + 'T' + schedule.time);
+            let showDateTime = new Date(schedule.schedule_date + 'T' + schedule.schedule_time);
             let now = new Date();
             let isPast = showDateTime < now;
             let showtimePast = isPast ? 'past-showtime' : '';
@@ -367,12 +374,12 @@
 
             const displayedTimesForCinema = displayedTimesByCinema.get(cinemaId);
 
-            if (!displayedTimesForCinema.has(schedule.time)) {
+            if (!displayedTimesForCinema.has(schedule.schedule_time)) {
                 // Thêm thời gian vào đối tượng đã hiển thị cho rạp này
-                displayedTimesForCinema.add(schedule.time);
+                displayedTimesForCinema.add(schedule.schedule_time);
 
                 // Thêm thời gian vào phần tử choose-times
-                const span = `<span class="time ${showtimePast}" data-value="${schedule.time}">${schedule.time}</span>`;
+                const span = `<span class="time ${showtimePast}" data-value="${schedule.schedule_time}">${schedule.schedule_time}</span>`;
                 chooseTimes.append(span);
             }
         }

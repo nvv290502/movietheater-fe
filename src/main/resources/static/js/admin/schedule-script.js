@@ -254,6 +254,7 @@ function renderCalendar(calendars) {
       }
       if ($dayEl.hasClass("no-interaction")) {
         info.revert();
+        return;
       } else {
         const movieId = info.event.extendedProps.movieId;
         const movieName = info.event.title;
@@ -272,18 +273,33 @@ function renderCalendar(calendars) {
         );
 
         if (!exists) {
-          schedules.push({
+          // Tạo một sự kiện mới dựa trên thông tin của sự kiện kéo vào
+          const newEvent = {
             itemId: info.event.extendedProps.itemId,
             movieId: movieId,
             movieName: movieName,
             start: startTime,
             end: endTime,
-            roomId: roomId, // Lưu roomId vào sự kiện
-            cinemaId: cinemaId, // Lưu roomId vào sự kiện
+            roomId: roomId,
+            cinemaId: cinemaId,
             backgroundImage: info.event.extendedProps.backgroundImage,
+          };
+
+          schedules.push(newEvent);
+
+          // Thêm sự kiện mới vào lịch thay vì chỉnh sửa sự kiện gốc
+          info.event.remove(); // Xóa sự kiện gốc
+          info.view.calendar.addEvent({
+            title: movieName,
+            start: startTime,
+            end: endTime,
+            extendedProps: {
+              ...newEvent
+            },
+            backgroundColor: info.event.backgroundColor,
+            borderColor: info.event.borderColor,
+            textColor: info.event.textColor
           });
-          // Cập nhật thời gian và chiều rộng cho sự kiện
-          info.event.setEnd(endTime); // Cập nhật thời gian kết thúc cho sự kiện
         } else {
           info.revert(); // Nếu đã tồn tại thì hoàn tác hành động
         }
@@ -459,7 +475,7 @@ function renderCalendar(calendars) {
         }
         return schedule;
       });
-    console.log(schedules);
+      console.log(schedules);
     },
     datesSet: function (info) {
       const isTimeGridWeek = info.view.type === 'timeGridWeek';
@@ -500,7 +516,7 @@ function renderCalendar(calendars) {
       const events = schedulesData.data.map((schedule) => {
         const startDateTime = `${schedule.schedule_date}T${schedule.schedule_time}+07:00`;
         // const endDateTime = `${schedule.schedule_date}T${schedule.schedule_time}+07:00`;
-        const endTime = new Date(new Date(startDateTime).getTime() + schedule.duration * 60000).toISOString(); 
+        const endTime = new Date(new Date(startDateTime).getTime() + schedule.duration * 60000).toISOString();
         const todayDate = getTodayDate();
         // Thêm vào mảng schedules
         schedules.push({
@@ -732,7 +748,7 @@ function fetchCinema() {
     type: "GET",
     dataType: "json",
     success: function (data) {
-     },
+    },
     error: function (xhr, status, error) {
       console.error("Error fetching cinemas:", error);
     },

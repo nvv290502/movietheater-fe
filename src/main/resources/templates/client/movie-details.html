@@ -110,6 +110,7 @@
     <script src="/js/client/cinema.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script src="/js/client/count-down.js"></script>
+    <script src="/js/index.js"></script>
 
 
     <script>
@@ -239,7 +240,7 @@
               categoryIds.push(category.category_id);
             }
 
-            callApiGetMovieRelated(categoryId);
+            callApiGetMovieRelated(categoryIds);
             displaySummary();
           },
           error: function (xhr) {
@@ -275,8 +276,8 @@
         $('#movie-name').text(movie.movie_name);
         $('#movie-duration').text(movie.duration);
         $('#movie-released-date').text(formatDate(movie.release_date));
-        $('#movie-small-image').attr('src', movie.poster_url).attr('alt', movie.movie_name);
-        $('.movie-detail-image').attr('src', movie.banner_url);
+        $('#movie-small-image').attr('src', BASE_URL + movie.poster_url).attr('alt', movie.movie_name);
+        $('.movie-detail-image').attr('src', BASE_URL + movie.banner_url);
         $('#movie-author').text(movie.author);
         $('#movie-actor').text(movie.actor);
         $('#movie-language').text(movie.language);
@@ -285,7 +286,7 @@
 
         const categoryIds = [];
 
-        for (let category of response.data.categories) {
+        for (let category of movie.categories) {
           categoryIds.push(category.category_id);
         }
         
@@ -304,11 +305,15 @@
 
       //hàm gọi api lấy danh sách phim liên quan.
       function callApiGetMovieRelated(categoryIds) {
+
+        var categoryParams = categoryIds.map((id, index) => `categoryIds[${index}]=${id}`).join('&');
+
         var settings = {
-          url: "http://localhost:8080/api/pub/movie/related?categoryIds=" + categoryIds,
+          url: "http://127.0.0.1:8000/api/movie/related?" + categoryParams,
           method: "GET",
           contentType: "application/json",
           success: function (response) {
+            console.log(response);
             $('.related-movies').empty();
             for (let movie of response.data) {
               $(`.card-related-movie[data-id="${id}"]`).hide();
@@ -327,22 +332,22 @@
       function renderMovieRelated(movie) {
 
         let category = movie.categories;
-        let categoryName = category.map(c => c.name);
+        let categoryName = category.map(c => c.category_name);
         let categoryHtml = categoryName.join(', ');
 
-        const relatedDiv = `<div class="card-related-movie" data-id="${movie.id}">
-      <img src="${movie.imageSmallUrl}"
-           alt="${movie.name}">
+        const relatedDiv = `<div class="card-related-movie" data-id="${movie.movie_id}">
+      <img src="${BASE_URL + movie.poster_url}"
+           alt="${movie.movie_name}">
       <div class="related-movie-info">
-        <p class="r-name">${movie.name}</p>
+        <p class="r-name">${movie.movie_name}</p>
         <a href="#"><p class="r-category">${categoryHtml}</p></a>
         <div>
-        <p class="r-released-date">${movie.releasedDate}</p>
+        <p class="r-released-date">${movie.release_date}</p>
         <p class="r-minus" style="font-size: 12px; font-weight: bold;">-</p>
         <p class="r-duration">${movie.duration} phút</p>
         </div>
       </div>
-      <div class="btn-detail" data-id="${movie.id}">
+      <div class="btn-detail" data-id="${movie.movie_id}">
         <button>
           <span>Xem chi tiết</span>
         </button>
@@ -355,7 +360,7 @@
       //Hàm call api lấy danh sách lịch chiếu theo phim
       function callApiGetShowTimeByMovie(movieId) {
         var settings = {
-          url: "http://localhost:8080/api/pub/showtime?movieId=" + movieId,
+          url: "http://127.0.0.1:8000/api/showtime/" + movieId,
           method: "GET",
           success: function (response, status, xhr) {
             $('tbody').empty();
@@ -380,21 +385,21 @@
 
       //Hàm map data danh sách lịch chiếu
       function renderShowTime(showtime) {
-        let timeFormat = formatTime(showtime.showTime);
-        let showDateTime = new Date(showtime.showDate + 'T' + showtime.showTime);
+        let timeFormat = formatTime(showtime.schedule_time);
+        let showDateTime = new Date(showtime.schedule_date + 'T' + showtime.schedule_time);
         let now = new Date();
         let isPast = showDateTime < now;
         let showtimePast = isPast ? 'past-showtime' : '';
 
         const tr = `<tr>
-        <td><a class="cinema-detail" href="">${showtime.cinemaName}</a></td>
-        <td>${showtime.roomName}</td>
+        <td><a class="cinema-detail" href="">${showtime.cinema_name}</a></td>
+        <td>${showtime.room_name}</td>
         <td>${timeFormat}</td>
-        <td>${showtime.showDate}</td>
-        <td><button class="btn-buy-ticket ${showtimePast}"  data-cinema-id="${showtime.cinemaId}"
-                                            data-room-id="${showtime.roomId}"
-                                            data-time="${showtime.showTime}"
-                                            data-date="${showtime.showDate}"
+        <td>${showtime.schedule_date}</td>
+        <td><button class="btn-buy-ticket ${showtimePast}"  data-cinema-id="${showtime.cinema_id}"
+                                            data-room-id="${showtime.room_id}"
+                                            data-time="${showtime.schedule_time}"
+                                            data-date="${showtime.schedule_date}"
                                             data-movie="${id}">
                                             <i class="fas fa-ticket-alt"></i> Mua Vé</button></td>
       </tr>`
@@ -404,7 +409,7 @@
       //Hàm gọi api lấy thông kê đánh giá theo phim
       function callApiGetStatisticsReview(movieId) {
         var settings = {
-          url: "http://localhost:8080/api/pub/review-statistics?movieId=" + movieId,
+          url: "http://127.0.0.1:8000/api/review/statistics/" + movieId,
           method: "GET",
           success: function (response) {
             $('.rating').text(response.data.rating);
@@ -422,7 +427,7 @@
           },
           error: function (xhr) {
             var response = JSON.parse(xhr.responseText);
-            console.log(response.message);
+            console.log(response[0].message);
             toastr.error("Có lỗi khi tải dữ liệu!");
           }
         }
@@ -432,17 +437,17 @@
       //Hàm gọi api lấy đánh giá theo movieId
       function callApiGetReviewByUser(movieId, size) {
         const settings = {
-          url: "http://localhost:8080/api/pub/review?movieId=" + movieId + "&size=" + size,
+          url: "http://127.0.0.1:8000/api/review/fillter?movieId=" + movieId + "&size=" + size,
           method: "GET",
           success: function (res) {
             $('.review-parent').empty();
-            for (let review of res.data.content) {
+            for (let review of res.content.data) {
               renderReview(review);
             }
           },
           error: function (xhr) {
             var response = JSON.parse(xhr.responseText);
-            console.log(response.message);
+            console.log(response[0].message);
             toastr.error("Có lỗi khi tải dữ liệu!");
           }
         }
@@ -451,8 +456,8 @@
 
       //Hàm map dữ liệu hiển thị danh sách đánh giá
       function renderReview(review) {
-        const stars = review.numberStar;
-        let createdDate = review.createdDate;
+        const stars = review.number_star;
+        let createdDate = review.created_at;
         let formatCreatedDate = formatDateTime(createdDate);
 
         let starHtml = '';
@@ -465,14 +470,14 @@
         }
         const div = `<div class="review">
            <div class="review-left">
-              <img src="${review.user.avatarUrl}" alt="${review.user.fullName}" class="reviewer-img">
+              <img src="${BASE_URL + review.users.avatar_url}" alt="${review.users.full_name}" class="reviewer-img">
               <div class="stars">
                 ${starHtml}
               </div>
             </div>
             <div class="review-right">
               <div class="reviewer-info">
-                  <span class="reviewer-name">${review.user.fullName}</span>
+                  <span class="reviewer-name">${review.users.full_name}</span>
                   <span class="reviewer-date">${formatCreatedDate}</span>
               </div>
               <div class="review-content">

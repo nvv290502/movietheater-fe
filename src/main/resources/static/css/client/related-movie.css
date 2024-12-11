@@ -1,24 +1,24 @@
 .related-movie-container {
     width: 100%;
     height: auto;
-    border: 1px solid #283e59;
+    border: 1px solid #3e79c1;
     border-bottom: none;
     border-radius: 6px;
     overflow: hidden;
     font-size: 13px;
+    color: white;
 }
 .related-movie-title {
-    color: rgb(173, 168, 165);
     font-size: 18px;
     font-weight: bold;
     padding: 20px;
     font-weight: 800;
-    border-bottom: 1px solid #283e59;
+    border-bottom: 1px solid #3e79c1;
 }
 .card-related-movie {
     width: 100%;
     height: 100px;
-    border-bottom: 1px solid #283e59;
+    border-bottom: 1px solid #3e79c1;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -34,7 +34,6 @@
 }
 
 .related-movie-info {
-    color: rgb(173, 168, 165);
     width: 70%;
     display: flex;
     flex-direction: column;
@@ -47,7 +46,7 @@
     margin: 0;
 }
 .r-category {
-    color: #95aac9;
+    color: #3e79c1;
 }
 
 .r-name {
@@ -64,8 +63,8 @@
 }
 
 .r-duration {
-    border: 1px solid #283e59;
-    color: #283e59;
+    border: 1px solid #3e79c1;
+    color: #3e79c1;
     padding: 0 10px;
 }
 
