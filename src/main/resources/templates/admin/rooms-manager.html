@@ -504,7 +504,7 @@
 
         function callApiGetAllRoom(cinemaId, page, size) {
             var settings = {
-                url: "http://127.0.0.1:8000/api/room-byCinema/" + cinemaId + "?size=" + size + "&page=" + page,
+                url: "http://127.0.0.1:8000/api/room/cinema/" + cinemaId + "?size=" + size + "&page=" + page,
                 method: "GET",
                 success: function (response) {
                     $('.paging-number-room').empty();
@@ -514,6 +514,7 @@
                     for (var room of response.data.data) {
                         renderRoom(room);
                     }
+                    
                 },
                 error: function (xhr) {
                     var response = JSON.parse(xhr.responseText);

@@ -47,6 +47,13 @@
         var roomName;
         var movieName;
 
+        // Danh sách lưu ghế đã chọn
+        let selectedSeats = [];
+        let price = 0;
+        let money = 0;
+        const MAX_SEATS = 5;
+        const VIP_MULTIPLIER = 0.30;
+
         $(document).ready(function () {
 
             //  <!-- Tải header -->
@@ -75,7 +82,7 @@
                     $('.room-detail-date').text(showDate);
                     $('.room-detail-time').text(formatTime(showTime));
                     callApiGetSeats(roomId, movieId, showDate, showTime, userId);
-                    callApiGetPriceTicket(movieId, showDate, showTime, function (res) {
+                    callApiGetPriceTicket(movieId, showDate, showTime, roomId, function (res) {
                         restoreSelectedSeats();
                     });
                     const selectedSeats = JSON.parse(localStorage.getItem('selectedSeats'));
@@ -116,7 +123,7 @@
                     $('.room-detail-date').text(showDate);
                     $('.room-detail-time').text(formatTime(showTime));
                     callApiGetSeats($roomId, movieId, showDate, showTime, userId);
-                    callApiGetPriceTicket(movieId, showDate, showTime, function (res) {
+                    callApiGetPriceTicket(movieId, showDate, showTime, $roomId, function (res) {
                         restoreSelectedSeats();
                     });
                     const selectedSeats = JSON.parse(localStorage.getItem('selectedSeats'));
@@ -153,8 +160,10 @@
                     showDate: showDate,
                     showTime: showTime,
                     seats: selectedSeats.toString(),
-                    amountMoney: parseFloat(localStorage.getItem('ticketMoney'))
+                    price: price
                 }
+
+                console.log(bill);
                 callApiSaveBill(bill);
             });
         });
@@ -181,7 +190,7 @@
                 $('.room-detail-date').text(showDate);
                 $('.room-detail-time').text(formatTime(showTime));
                 callApiGetSeats(roomId, movieId, showDate, showTime, userId);
-                callApiGetPriceTicket(movieId, showDate, showTime, function (res) {
+                callApiGetPriceTicket(movieId, showDate, showTime, roomId, function (res) {
                     restoreSelectedSeats();
                 });
                 const selectedSeats = JSON.parse(localStorage.getItem('selectedSeats'));
@@ -216,7 +225,7 @@
                 $('.room-detail-date').text(showDate);
                 $('.room-detail-time').text(formatTime(showTime));
                 callApiGetSeats(roomId, movieId, showDate, showTime, userId);
-                callApiGetPriceTicket(movieId, showDate, showTime, function (res) {
+                callApiGetPriceTicket(movieId, showDate, showTime, roomId, function (res) {
                     restoreSelectedSeats();
                 });
                 const selectedSeats = JSON.parse(localStorage.getItem('selectedSeats'));
@@ -262,7 +271,7 @@
                     $('.room-detail-date').text(showDate);
                     $('.room-detail-time').text(formatTime(showTime));
                     callApiGetSeats(roomId, movieId, showDate, showTime, userId);
-                    callApiGetPriceTicket(movieId, showDate, showTime, function (res) {
+                    callApiGetPriceTicket(movieId, showDate, showTime, roomId, function (res) {
                         restoreSelectedSeats();
                     });
                     const selectedSeats = JSON.parse(localStorage.getItem('selectedSeats'));
@@ -277,15 +286,10 @@
             }
         }
 
-        // Danh sách lưu ghế đã chọn
-        let selectedSeats = [];
-        let price = 0;
-        let money = 0;
-        const MAX_SEATS = 5;
-        const VIP_MULTIPLIER = 0.30;
         //Call back api lấy thông tin giá vé và xử lý khi chọn 1 ghế
-        callApiGetPriceTicket(movieId, showDate, showTime, function (res) {
+        callApiGetPriceTicket(movieId, showDate, showTime, roomId, function (res) {
             price = res.data.price;
+            console.log(price);
             // Xử lý sự kiện khi người dùng chọn hoặc bỏ chọn ghế
             $(document).on('click', '.seat', function () {
                 const $seat = $(this);
@@ -379,16 +383,16 @@
         function callApiGetRoomShowTime(movieId, time, date, cinemaId) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/room/showtime?movieId=" + movieId + "&showDate=" + date + "&showTime=" + time + "&cinemaId=" + cinemaId,
+                url: "http://127.0.0.1:8000/api/room/show-time?movieId=" + movieId + "&showDate=" + date + "&showTime=" + time + "&cinemaId=" + cinemaId,
                 method: "GET",
                 contentType: "application/json",
                 success: function (response) {
                     let roomList = $('.room-list');
                     roomList.empty();
-                    if (response.data.length === 0) {
+                    if (response.content.length === 0) {
                         roomList.append('<p>Không có phòng nào có suất chiếu!</p>');
                     } else {
-                        for (let room of response.data) {
+                        for (let room of response.content) {
                             renderRoomShowTime(room);
                         }
                     }
@@ -397,7 +401,7 @@
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    console.log(response.message);
+                    console.log(response[0].message);
                 }
             }
             $.ajax(settings);
@@ -405,13 +409,13 @@
 
         // Hàm map data lên giao diện danh sách phòng
         function renderRoomShowTime(room) {
-            const roomItem = `<div class="room-item" data-id="${room.id}">
-                <img src="https://anhduyenaudio.vn/files/files/xem%20phim/man-hinh-chieu-co-dinh.jpg" alt="${room.name}"
+            const roomItem = `<div class="room-item" data-id="${room.room_id}">
+                <img src="https://anhduyenaudio.vn/files/files/xem%20phim/man-hinh-chieu-co-dinh.jpg" alt="${room.room_name}"
                     class="room-image">
                 <div class="room-info">
-                    <h2 class="room-name">${room.name}</h2>
+                    <h2 class="room-name">${room.room_name}</h2>
                     <p class="room-location">${room.location}</p>
-                    <p class="room-seats">Số ghế: ${room.seatNumbers}</p>
+                    <p class="room-seats">Số ghế: ${room.number_seat_column * room.number_seat_row}</p>
                 </div>
             </div>`;
             $('.room-list').append(roomItem);
@@ -421,17 +425,18 @@
         function callApiGetCinemaById(id) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/cinema/" + id,
+                url: "http://127.0.0.1:8000/api/cinema/" + id,
                 method: "GET",
                 success: function (response) {
-                    cinemaName = response.name;
+                    console.log(response);
+                    cinemaName = response.data.cinema_name;
                     $('.movie-choosed-cinema').text(cinemaName);
                     $('.background').hide();
                 },
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    console.log(response.message);
+                    console.log(response[0].message);
                 }
             }
             $.ajax(settings);
@@ -454,17 +459,17 @@
         function callApiGetRoomById(id) {
             $('.background').show();
             var settings = {
-                url: "http://localhost:8080/api/pub/room/" + id,
+                url: "http://127.0.0.1:8000/api/room/" + id,
                 method: "GET",
                 success: function (response) {
-                    roomName = response.name;
+                    roomName = response.data.room_name;
                     $('.room-detail-name').text(roomName);
                     $('.background').hide();
                 },
                 error: function (xhr) {
                     $('.background').hide();
                     var response = JSON.parse(xhr.responseText);
-                    console.log(response.message);
+                    console.log(response[0].message);
                 }
             }
             $.ajax(settings);
@@ -473,15 +478,16 @@
         // Hàm gọi API để tải danh sách ghế theo phòng
         function callApiGetSeats(roomId, movieId, showDate, showTime, userId) {
             $.ajax({
-                url: `http://localhost:8080/api/pub/seats?roomId=${roomId}`,
+                url: "http://127.0.0.1:8000/api/seat/room/" + roomId,
                 method: "GET",
                 success: function (response) {
-                    if (response.status === 'OK') {
+                    if (response.status === 200) {
+                        console.log(response);
                         const seatsByRow = groupSeatsByRow(response.data);
 
                         // Gọi API để lấy danh sách ghế đã bị đặt
                         callApiGetSeatsByBill(movieId, roomId, showDate, showTime, "", function (bookedSeatsRes) {
-                            const bookedSeatIds = (bookedSeatsRes.status === 'OK' && bookedSeatsRes.data) || [];
+                            const bookedSeatIds = (bookedSeatsRes.status === 200 && bookedSeatsRes.data) || [];
 
                             // Gọi API để lấy danh sách ghế của người dùng (nếu có userId)
                             if (userId) {
@@ -504,15 +510,16 @@
         // Hàm gọi API để lấy danh sách ghế đã bị đặt
         function callApiGetSeatsByBill(movieId, roomId, showDate, showTime, userId, callback) {
             $.ajax({
-                url: `http://localhost:8080/api/pub/seatByBillDetail?movieId=${movieId}&roomId=${roomId}&showDate=${showDate}&showTime=${showTime}&userId=${userId}`,
+                url: `http://127.0.0.1:8000/api/seat/bill?movieId=${movieId}&roomId=${roomId}&showDate=${showDate}&showTime=${showTime}&userId=${userId}`,
                 method: "GET",
                 contentType: "application/json",
                 success: function (res) {
+                    console.log(res);
                     callback(res);
                 },
                 error: function (xhr) {
                     const res = JSON.parse(xhr.responseText);
-                    console.error(res.message);
+                    console.error(res[0].message);
                     callback({ status: 'ERROR', data: [] });
                 }
             });
@@ -521,10 +528,10 @@
         // Hàm nhóm các ghế theo hàng
         function groupSeatsByRow(seats) {
             return seats.reduce((acc, seat) => {
-                if (!acc[seat.rowName]) {
-                    acc[seat.rowName] = [];
+                if (!acc[seat.row_name]) {
+                    acc[seat.row_name] = [];
                 }
-                acc[seat.rowName].push(seat);
+                acc[seat.row_name].push(seat);
                 return acc;
             }, {});
         }
@@ -541,19 +548,19 @@
                 rowDiv.append(rowTitleDiv);
 
                 seatsByRow[row].forEach(seat => {
-                    const seatDiv = $(`<div data-seat-name="${seat.rowName}${seat.columnName}">`).addClass('seat');
+                    const seatDiv = $(`<div data-seat-name="${seat.row_name}${seat.column_name}">`).addClass('seat');
                     const seatClasses = [];
 
-                    if (userBookedSeatIds.includes(seat.seatId)) {
+                    if (userBookedSeatIds.includes(seat.seat_id)) {
                         seatClasses.push('bought');
-                    } else if (bookedSeatIds.includes(seat.seatId)) {
+                    } else if (bookedSeatIds.includes(seat.seat_id)) {
                         seatClasses.push('unavailable');
                     } else {
-                        seatClasses.push(seat.typeSeat.toLowerCase());
+                        seatClasses.push(seat.type_seat.toLowerCase());
                     }
 
                     seatDiv.addClass(seatClasses.join(' '));
-                    seatDiv.attr('title', `${seat.rowName}${seat.columnName}`);
+                    seatDiv.attr('title', `${seat.row_name}${seat.column_name}`);
                     seatDiv.html('<i class="fas fa-couch"></i>');
 
                     rowDiv.append(seatDiv);
@@ -563,12 +570,13 @@
             });
         }
 
-        function callApiGetPriceTicket(movieId, showDate, showTime, callback) {
+        function callApiGetPriceTicket(movieId, showDate, showTime, roomId, callback) {
             const settings = {
-                url: "http://localhost:8080/api/pub/schedule/priceTicket?movieId=" + movieId + "&showDate=" + showDate + "&showTime=" + showTime,
+                url: "http://127.0.0.1:8000/api/showtime/price?movieId=" + movieId + "&showDate=" + showDate + "&showTime=" + showTime + "&roomId=" + roomId,
                 method: "GET",
                 contentType: "application/json",
                 success: function (res) {
+                    console.log(res);
                     callback(res);
                 },
                 error: function (xhr) {
@@ -583,11 +591,12 @@
         function callApiSaveBill(bill) {
             $('.background').show();
             const settings = {
-                url: "http://localhost:8080/api/pub/bill",
+                url: "http://127.0.0.1:8000/api/bill",
                 method: "POST",
                 data: JSON.stringify(bill),
                 contentType: "application/json",
                 success: function (res) {
+                    console.log(res);
                     $('.background').hide();
                     $('#ticket-progress').load("/booking/food", function () {
                         var checkPoint = parseInt($('#check-point').text().trim(), 10);
