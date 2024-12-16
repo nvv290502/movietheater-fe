@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/css/admin/index.css">
     <link rel="stylesheet" href="/css/admin/movies-manager.css">
     <link rel="stylesheet" href="/css/admin/menu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
     <title>Admin Dashboard</title>
 </head>
@@ -123,14 +124,22 @@
     </div>
 
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/1.2.1/chartjs-plugin-zoom.min.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/admin/is-admin.js"></script>
 
     <script>
         $(document).ready(function () {
+
+            let accessToken = localStorage.getItem('accessToken') || null;
+            isAdmin(accessToken);
+
             const ctx = $('#revenueChart')[0].getContext('2d');
             let revenueChart;
             let currentView = 'month';
@@ -149,16 +158,13 @@
                     const response = await callApiGetYearlyRevenue();
                     console.log("Dữ liệu từ API theo năm:", response);
 
-                    if (!response.revenues || !response.years || response.revenues.length !== response.years.length) {
-                        throw new Error("Dữ liệu không hợp lệ");
-                    }
+                    const labels = response.map(item => item.years); // Mảng các năm
+                    const revenues = response.map(item => parseInt(item.revenues, 10)); // Mảng các doanh thu
 
-                    availableYears = response.years;
+                    availableYears = labels;
                     updateYearSelect(availableYears);
 
-                    const labels = response.years;
-                    const revenues = response.revenues.map(revenue => parseInt(revenue, 10));
-
+                    // Trả về dữ liệu cho biểu đồ
                     return {
                         labels: labels,
                         datasets: [{
@@ -170,6 +176,7 @@
                     };
                 } catch (error) {
                     console.error("Lỗi khi lấy dữ liệu doanh thu theo năm:", error);
+
                     return {
                         labels: [],
                         datasets: [{
@@ -182,17 +189,14 @@
                 }
             }
 
+
             async function updateMonthlyData(year) {
                 try {
                     const response = await callApiMonthlyRevenue(year);
                     console.log("Dữ liệu từ API theo tháng:", response);
 
-                    if (!response.month || !response.revenues || response.month.length !== response.revenues.length) {
-                        throw new Error("Dữ liệu không hợp lệ");
-                    }
-
-                    const labels = response.month.map(month => `${month}/${year}`);
-                    const revenues = response.revenues.map(revenue => parseInt(revenue, 10));
+                    const labels = response.map(item => `${item.month}/${year}`);
+                    const revenues = response.map(item => parseInt(item.revenues, 10));
 
                     return {
                         labels: labels,
@@ -205,6 +209,7 @@
                     };
                 } catch (error) {
                     console.error("Lỗi khi lấy dữ liệu doanh thu theo tháng:", error);
+
                     return {
                         labels: [],
                         datasets: [{
@@ -217,17 +222,13 @@
                 }
             }
 
+
             async function updateDailyData(year, month) {
                 try {
                     const response = await callApiDailyRevenue(year, month);
                     console.log("Dữ liệu từ API theo ngày:", response);
-
-                    if (!response.days || !response.revenues || response.days.length !== response.revenues.length) {
-                        throw new Error("Dữ liệu không hợp lệ");
-                    }
-
-                    const labels = response.days.map(day => `${day}/${month}`);
-                    const revenues = response.revenues.map(revenue => parseInt(revenue, 10));
+                    const labels = response.map(item => `${item.days}/${month}`);
+                    const revenues = response.map(item => parseInt(item.revenues, 10));
 
                     return {
                         labels: labels,
@@ -257,12 +258,8 @@
                     const response = await callApiHourlyRevenue(year, month, day);
                     console.log("Dữ liệu từ API theo giờ:", response);
 
-                    if (!response.hours || !response.revenues || response.hours.length !== response.revenues.length) {
-                        throw new Error("Dữ liệu không hợp lệ");
-                    }
-
-                    const labels = response.hours.map(hour => `${hour}:00`);
-                    const revenues = response.revenues.map(revenue => parseInt(revenue, 10));
+                    const labels = response.map(item => `${item.hours}:00`);
+                    const revenues = response.map(item => parseInt(item.revenues, 10));
 
                     return {
                         labels: labels,
@@ -544,7 +541,7 @@
             function callApiGetYearlyRevenue() {
                 return new Promise((resolve, reject) => {
                     $.ajax({
-                        url: "http://localhost:8080/api/pub/revenue/yearly",
+                        url: "http://127.0.0.1:8000/api/revenue/year",
                         method: "GET",
                         success: function (data) {
                             resolve(data);
@@ -559,7 +556,7 @@
             function callApiMonthlyRevenue(year) {
                 return new Promise((resolve, reject) => {
                     $.ajax({
-                        url: `http://localhost:8080/api/pub/revenue/monthly?year=${year}`,
+                        url: `http://127.0.0.1:8000/api/revenue/month?year=${year}`,
                         method: "GET",
                         success: function (data) {
                             resolve(data);
@@ -575,7 +572,7 @@
             function callApiDailyRevenue(year, month) {
                 return new Promise((resolve, reject) => {
                     $.ajax({
-                        url: `http://localhost:8080/api/pub/revenue/daily?year=${year}&month=${month}`,
+                        url: `http://127.0.0.1:8000/api/revenue/daily?year=${year}&month=${month}`,
                         method: "GET",
                         success: function (data) {
                             resolve(data);
@@ -591,7 +588,7 @@
             function callApiHourlyRevenue(year, month, day) {
                 return new Promise((resolve, reject) => {
                     $.ajax({
-                        url: `http://localhost:8080/api/pub/revenue/hours?year=${year}&month=${month}&day=${day}`,
+                        url: `http://127.0.0.1:8000/api/revenue/hours?year=${year}&month=${month}&day=${day}`,
                         method: "GET",
                         success: function (data) {
                             resolve(data);
@@ -607,7 +604,7 @@
             function callApiRevenueMovie() {
                 return new Promise((resolve, reject) => {
                     $.ajax({
-                        url: `http://localhost:8080/api/pub/revenue/movie`,
+                        url: `http://127.0.0.1:8000/api/revenue/movie`,
                         method: "GET",
                         success: function (data) {
                             resolve(data);
@@ -623,7 +620,7 @@
             function callApiRevenueCinema() {
                 return new Promise((resolve, reject) => {
                     $.ajax({
-                        url: `http://localhost:8080/api/pub/revenue/cinema`,
+                        url: `http://127.0.0.1:8000/api/revenue/cinema`,
                         method: "GET",
                         success: function (data) {
                             resolve(data);
@@ -656,8 +653,9 @@
 
                 try {
                     const response = await callApiDailyRevenue(year, month);
-                    const todayRevenue = response.revenues[day - 1] || 0;
-                    return parseInt(todayRevenue, 10);
+
+                    const todayRevenue = response[day - 1] || 0;
+                    return parseInt(todayRevenue.revenues, 10);
                 } catch (error) {
                     console.error("Lỗi khi lấy doanh thu ngày hôm nay:", error);
                     return 0;
@@ -669,10 +667,7 @@
             async function getTotalRevenue() {
                 try {
                     const response = await callApiGetYearlyRevenue();
-                    if (!response.revenues || response.revenues.length === 0) {
-                        throw new Error("Dữ liệu không hợp lệ");
-                    }
-                    const totalRevenue = response.revenues.reduce((sum, revenue) => sum + parseInt(revenue, 10), 0);
+                    const totalRevenue = response.reduce((sum, revenue) => sum + parseInt(revenue.revenues, 10), 0);
                     return totalRevenue;
                 } catch (error) {
                     console.error("Lỗi khi tính tổng doanh thu:", error);
@@ -821,7 +816,7 @@
 
         function fetchAndDisplayMovieRanking() {
             $.ajax({
-                url: "http://localhost:8080/api/pub/movie/top-movie",
+                url: "http://127.0.0.1:8000/api/revenue/movie/top",
                 method: "GET",
                 success: function (response) {
                     const moviePromises = Object.entries(response).map(([id, score]) => {
@@ -844,7 +839,7 @@
         function fetchMovieDetails(id) {
             return new Promise((resolve, reject) => {
                 $.ajax({
-                    url: `http://localhost:8080/api/pub/movie/${id}`,
+                    url: `http://127.0.0.1:8000/api/movie/${id}`,
                     method: "GET",
                     success: function (response) {
                         resolve(response.data);
@@ -863,10 +858,10 @@
                 const listItem = `
                 <li class="ranking-item">
                     <span class="rank">${index + 1}</span>
-                    <img src="${movie.imageSmallUrl}" alt="${movie.name}" class="movie-thumbnail">
+                    <img src="${BASE_URL + movie.poster_url}" alt="${movie.movie_name}" class="movie-thumbnail">
                     <div class="movie-info">
-                        <h3 class="movie-title">${movie.name}</h3>
-                        <p class="movie-release-date">Ngày phát hành: ${movie.releasedDate}</p>
+                        <h3 class="movie-title">${movie.movie_name}</h3>
+                        <p class="movie-release-date">Ngày phát hành: ${movie.release_date}</p>
                     </div>
                     <div class="movie-score-container">
                         <div class="movie-score">${movie.score.toFixed(1)}</div>
@@ -878,7 +873,7 @@
         }
         function callApiGetNewCustomer() {
             $.ajax({
-                url: 'http://localhost:8080/api/pub/revenue/new-customer',
+                url: 'http://127.0.0.1:8000/api/revenue/new-customer',
                 method: "GET",
                 success: function (response) {
                     const number = response.data.length;

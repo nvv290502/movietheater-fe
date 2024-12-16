@@ -184,7 +184,7 @@
             function callApiMovieRevenue(startDate, endDate) {
                 return new Promise((resolve, reject) => {
                     $.ajax({
-                        url: `http://localhost:8080/api/pub/revenue/movie?startDate=${startDate}&endDate=${endDate}`,
+                        url: `http://127.0.0.1:8000/api/revenue/movie?startDate=${startDate}&endDate=${endDate}`,
                         method: "GET",
                         success: function (data) {
                             resolve(data);

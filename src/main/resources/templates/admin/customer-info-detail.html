@@ -379,6 +379,7 @@
                         Authorization: "Bearer " + localStorage.getItem("accessToken"),
                     },
                     success: function (response) {
+                        console.log(response);
                         renderCustomerDetail(response.data);
                         $('.title-customer-name').text(response.data.full_name);
                         $('.booking-history-full-name').text(response.data.full_name);

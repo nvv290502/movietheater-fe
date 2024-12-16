@@ -802,7 +802,7 @@
         // Hàm gọi API để tải danh sách ghế theo phòng
         function callApiGetSeats(roomId) {
             $.ajax({
-                url: "http://127.0.0.1:8000/api/seat-byRoom/" + roomId,
+                url: "http://127.0.0.1:8000/api/seat/room/" + roomId,
                 method: "GET",
                 success: function (response) {
                     const seatsByRow = groupSeatsByRow(response.data);
