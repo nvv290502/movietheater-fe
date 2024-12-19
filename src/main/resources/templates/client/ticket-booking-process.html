@@ -482,17 +482,15 @@
                 method: "GET",
                 success: function (response) {
                     if (response.status === 200) {
-                        console.log(response);
                         const seatsByRow = groupSeatsByRow(response.data);
 
                         // Gọi API để lấy danh sách ghế đã bị đặt
                         callApiGetSeatsByBill(movieId, roomId, showDate, showTime, "", function (bookedSeatsRes) {
-                            const bookedSeatIds = (bookedSeatsRes.status === 200 && bookedSeatsRes.data) || [];
-
+                            const bookedSeatIds = (bookedSeatsRes.status === 200 && bookedSeatsRes.content) || [];
                             // Gọi API để lấy danh sách ghế của người dùng (nếu có userId)
                             if (userId) {
                                 callApiGetSeatsByBill(movieId, roomId, showDate, showTime, userId, function (userSeatsRes) {
-                                    const userBookedSeatIds = (userSeatsRes.status === 'OK' && userSeatsRes.data) || [];
+                                    const userBookedSeatIds = (userSeatsRes.status === 200 && userSeatsRes.content) || [];
                                     updateSeatDisplay(seatsByRow, bookedSeatIds, userBookedSeatIds);
                                 });
                             } else {
@@ -514,7 +512,6 @@
                 method: "GET",
                 contentType: "application/json",
                 success: function (res) {
-                    console.log(res);
                     callback(res);
                 },
                 error: function (xhr) {
@@ -551,7 +548,9 @@
                     const seatDiv = $(`<div data-seat-name="${seat.row_name}${seat.column_name}">`).addClass('seat');
                     const seatClasses = [];
 
-                    if (userBookedSeatIds.includes(seat.seat_id)) {
+                    const userBookedSeatIdsArray = userBookedSeatIds.map(item => item.seat_id);
+
+                    if (userBookedSeatIdsArray.includes(seat.seat_id)) {
                         seatClasses.push('bought');
                     } else if (bookedSeatIds.includes(seat.seat_id)) {
                         seatClasses.push('unavailable');
@@ -621,7 +620,7 @@
 
         function callApiDeleteBillByBillCode(billCode) {
             const settings = {
-                url: "http://localhost:8080/api/pub/bill?billCode=" + billCode,
+                url: "http://127.0.0.1:8000/api/bill?billCode=" + billCode,
                 method: "DELETE",
                 contentType: "applicatin/json",
                 success: function (res) {

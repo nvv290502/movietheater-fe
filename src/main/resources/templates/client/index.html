@@ -339,52 +339,6 @@
         $(".content-movie-upcoming-show")
       );
 
-
-      // $('#movie-show-today').addClass('active');
-      // $('.list-movie-container').load("/movie/showing-today", function () {
-      //   slick($(".content"), 5, 5);
-      //   callApiGetMovie(
-      //     "http://localhost:8080/api/pub/movie/showToDay",
-      //     $(".content-movie-show-to-day")
-      //   );
-      // });
-
-      // $(document).on('click', '#movie-top', function (e) {
-      //   e.preventDefault();
-      //   $('ul li').removeClass('active');
-      //   $(this).addClass('active');
-      //   $('.list-movie-container').load('/movie/movie-top-score', function () {
-      //     slick($(".content"), 5, 5);
-      //     callApiGetTop10Movie();
-      //   });
-      // });
-
-      // $(document).on('click', '#movie-upcoming-show', function (e) {
-      //   e.preventDefault();
-      //   $('ul li').removeClass('active');
-      //   $(this).addClass('active');
-      //   $('.list-movie-container').load('/movie/movie-upcoming-show', function () {
-      //     slick($(".content"), 5, 5);
-      //     callApiGetMovie(
-      //       "http://localhost:8080/api/pub/movie/upcomingReleases",
-      //       $(".content-movie-upcoming-show")
-      //     );
-      //   });
-      // });
-
-      // $(document).on('click', '#movie-show-today', function (e) {
-      //   e.preventDefault();
-      //   $('ul li').removeClass('active');
-      //   $(this).addClass('active');
-      //   $('.list-movie-container').load('/movie/showing-today', function () {
-      //     slick($(".content"), 5, 5);
-      //     callApiGetMovie(
-      //       "http://localhost:8080/api/pub/movie/showToDay",
-      //       $(".content-movie-show-to-day")
-      //     );
-      //   });
-      // });
-
       $('.menu-movie-list a').on('click', function (event) {
         if (this.hash !== "") {
           event.preventDefault();
@@ -557,7 +511,7 @@
 
     function callApiGetTop10Movie() {
       let settings = {
-        url: "http://localhost:8080/api/pub/movie/top-movie",
+        url: "http://127.0.0.1:8000/api/revenue/movie/top",
         method: "GET",
         success: function (response) {
           const div = $(".content-movie-hot .movie");
@@ -595,15 +549,15 @@
     function callApiGetMovieById(id, score) {
       return new Promise((resolve, reject) => {
         var settings = {
-          url: "http://localhost:8080/api/pub/movie/" + id,
+          url: "http://127.0.0.1:8000/api/movie/" + id,
           method: "GET",
           success: function (response) {
             resolve({ movie: response.data, score });
           },
           error: function (xhr) {
             var response = JSON.parse(xhr.responseText);
-            console.log(response.message);
-            reject(response.message);
+            console.log(response[0].message);
+            reject(response[0].message);
           },
         };
         $.ajax(settings);
@@ -611,17 +565,17 @@
     }
 
     function renderMovieTop(movie, divParent, score, index) {
-      const date = formatDate(movie.releasedDate);
+      const date = formatDate(movie.release_date);
       const isActive = index === 0 ? 'active' : '';
       const movieCard = `
-        <div class="card-movie-top ${isActive}" data-trailer-id="${movie.trailerUrl}">
+        <div class="card-movie-top ${isActive}" data-trailer-id="${movie.poster_url}">
             <div class="movie-rank"><span>${index + 1}</span></div>
             <div class="card-movie-image">
-                <img src="${movie.imageSmallUrl}" alt="${movie.name}">
+                <img src="${BASE_URL + movie.poster_url}" alt="${movie.movie_name}">
             </div>
             <div class="content-card">
                 <div class="title-card">
-                    <p>${movie.name}</p>
+                    <p>${movie.movie_name}</p>
                 </div>
                 <div class="top-info">
                   <div class="movie-release-date"><i class="far fa-calendar-alt"></i> <span>${date}</span></div>
@@ -634,11 +588,11 @@
                   </div>
                 </div>
                 <div class="btn-movie">
-                  <button class="detail-movie btn-buy-ticket" data-id="${movie.id}">
+                  <button class="detail-movie btn-buy-ticket" data-id="${movie.movie_id}">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Mua vé</span>
                   </button>
-                  <button class="detail-movie btn-detail-movie" data-id="${movie.id}">
+                  <button class="detail-movie btn-detail-movie" data-id="${movie.movie_id}">
                     <i class="fa-solid fa-circle-info"></i>
                     <span>Chi tiết</span>
                   </button>
@@ -648,7 +602,7 @@
       divParent.append(movieCard);
 
       if (index === 0) {
-        $('#top-movie-trailer').attr('src', 'https://www.youtube.com/embed/' + movie.trailerUrl);
+        $('#top-movie-trailer').attr('src', 'https://www.youtube.com/embed/' + movie.trailer);
       }
     }
 

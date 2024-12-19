@@ -20,9 +20,9 @@ function getInfo(accessToken, url) {
             'Authorization': `Bearer ${accessToken}` // Thêm 'Bearer ' nếu cần
         },
         success: function (response) {
-            localStorage.setItem("userId", response.id);
+            localStorage.setItem("userId", response.data.user_id);
             // console.log(response);
-            renderInfoUser(response);
+            renderInfoUser(response.data);
         },
         error: function (xhr) {
             if (xhr.status === 401) {
@@ -58,7 +58,7 @@ function handleCallback(callback) {
 function executeAfterTokenReceived(accessTokenGoogle, accessTokenLocal) {
     if (accessTokenLocal != null) {
         $(".no-login").css("display", "none");
-        getInfo(accessTokenLocal, "http://localhost:8080/user/info");
+        getInfo(accessTokenLocal, "http://127.0.0.1:8000/api/auth/profile");
     }
     if (accessTokenGoogle != null) {
         $(".no-login").css("display", "none");
@@ -71,7 +71,7 @@ function executeAfterTokenReceived(accessTokenGoogle, accessTokenLocal) {
 }
 
 function renderInfoUser(user) {
-    const info = `<img src="${user.avatarUrl}" alt=""
+    const info = `<img src="${"http://127.0.0.1:8000/storage/" + user.avatar_url}" alt=""
                         width="100%" height="100%" style="object-fit: cover; object-position: center;">`
     $('.avatar-placeholder').append(info);
 }

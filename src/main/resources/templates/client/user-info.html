@@ -217,7 +217,8 @@
     <script src="/css/bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
     <script src="/js/client/login.js"></script>
-    <script src="/js/client/checkToken.js"></script>
+    <script src="/js/index.js"></script>
+    <!-- <script src="/js/client/checkToken.js"></script> -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel/slick/slick.min.js"></script>
     <script>
         var accessTokenLocal = localStorage.getItem("accessToken");
@@ -383,7 +384,7 @@
         //hàm xử lý hiển thị thông tin
         function getUser() {
             if (accessTokenLocal != null) {
-                callApiGetUserInfo(accessTokenLocal, "http://localhost:8080/user/info");
+                callApiGetUserInfo(accessTokenLocal, "http://127.0.0.1:8000/api/auth/profile");
             }
             if (accessTokenGoogle != null) {
                 callApiGetUserInfo(accessTokenGoogle, "http://localhost:8080/oauth2/getUser");
@@ -399,10 +400,10 @@
                     'Authorization': `Bearer ${accessToken}`
                 },
                 success: function (response) {
-                    username = response.username;
-                    userId = response.id;
-                    renderUserInfo(response);
-                    callApiGetAmountMoney(response.id);
+                    username = response.data.username;
+                    userId = response.data.user_id;
+                    renderUserInfo(response.data);
+                    callApiGetAmountMoney(response.user_id);
                 },
                 error: function (xhr) {
                     console.log("Có lỗi khi tải dữ liệu!");
@@ -412,13 +413,13 @@
 
         //hàm map dữ liệu thông tin khách hàng
         function renderUserInfo(user) {
-            $('#user-id').val(user.id);
-            $('#full-name').val(user.fullName);
+            $('#user-id').val(user.user_id);
+            $('#full-name').val(user.full_name);
             $('#phone').val(user.phone);
-            $('#dob').val(user.dob);
+            $('#dob').val(user.date_of_birth);
             $('#email').val(user.email);
-            $('.user-info-name').text(user.fullName);
-            $('.user-info-avatar').attr('src', user.avatarUrl);
+            $('.user-info-name').text(user.full_name);
+            $('.user-info-avatar').attr('src', BASE_URL + user.avatar_url);
         }
 
         //Hàm gọi api lấy tổng tiền đã chi tiêu theo khách hàng
